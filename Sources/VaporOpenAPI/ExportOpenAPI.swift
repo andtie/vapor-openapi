@@ -9,9 +9,11 @@ import Vapor
 public struct ExportOpenAPI<A: Authenticatable>: Command {
 
     let auth: () -> A
+    let title: String
 
-    public init(auth: @autoclosure @escaping () -> A) {
+    public init(title: String, auth: @autoclosure @escaping () -> A) {
         self.auth = auth
+        self.title = title
     }
 
     public struct Signature: CommandSignature {
@@ -28,7 +30,7 @@ public struct ExportOpenAPI<A: Authenticatable>: Command {
         case text(String)
     }
 
-    func parameters(for route: Route, of app: Application, schemas: inout [String: SchemaObject]) -> [OpenAPI.Parameter] {
+    func parameters(for route: Route, of app: Application, schemas: inout [String: SchemaObject]) -> (OpenAPI.RequestBody?, [OpenAPI.Parameter]) {
 
         let bodyDecoder = TestContentDecoder()
         ContentConfiguration.global.use(decoder: bodyDecoder, for: .json)
@@ -50,7 +52,26 @@ public struct ExportOpenAPI<A: Authenticatable>: Command {
             _ = try? route.responder.respond(to: request).wait()
         }
 
-        return queryDecoder.decoders
+        let body: OpenAPI.RequestBody? = bodyDecoder.result.map { decoder, decodable in
+            var name = extractName(from: decodable)
+            let isOptional = name.hasPrefix("Optional<")
+            if isOptional {
+                name = String(name.dropFirst("Optional<".count).dropLast())
+                    .components(separatedBy: ".")
+                    .dropFirst()
+                    .joined(separator: ".")
+            }
+            schemas[name] = decoder.schemaObject
+            return OpenAPI.RequestBody(
+                description: nil,
+                content: [
+                    "application/json": .init(schema: .init(name: name))
+                ],
+                required: !isOptional
+            )
+        }
+
+        let queries: [OpenAPI.Parameter] = queryDecoder.decoders
             .flatMap { decoder in
                 decoder.schemaObject.properties?.map { key, schema in
                     OpenAPI.Parameter(
@@ -67,6 +88,8 @@ public struct ExportOpenAPI<A: Authenticatable>: Command {
                     result.append(parameter)
                 }
             }
+
+        return (body, queries)
     }
 
     func response(for route: Route, schemas: inout [String: SchemaObject]) throws -> OpenAPI.Response {
@@ -114,10 +137,6 @@ public struct ExportOpenAPI<A: Authenticatable>: Command {
                 }
                 .joined(separator: "/")
 
-            var pathDict = paths[path] ?? [:]
-            let verb = route.method.rawValue.lowercased()
-            let operationId = route.path.map { "\($0)" } + [verb]
-
             let pathParameters = route.path.compactMap { component -> OpenAPI.Parameter? in
                 guard case let .parameter(parameter) = component else { return nil }
                 return OpenAPI.Parameter(
@@ -129,14 +148,18 @@ public struct ExportOpenAPI<A: Authenticatable>: Command {
                 )
             }
 
-            let parameters = pathParameters
-                + self.parameters(for: route, of: context.application, schemas: &schemas)
+            var pathDict = paths[path] ?? [:]
+            let verb = route.method.rawValue.lowercased()
+            let operationId = route.path.map { "\($0)" } + [verb]
+
+            let (body, queries) = parameters(for: route, of: context.application, schemas: &schemas)
 
             let operation = OpenAPI.Operation(
                 summary: route.userInfo["description"] as? String,
                 operationId: operationId.joined(separator: "-"),
                 tags: nil,
-                parameters: parameters,
+                parameters: pathParameters + queries,
+                requestBody: body,
                 responses: [
                     "default": try response(for: route, schemas: &schemas)
                 ]
@@ -147,7 +170,7 @@ public struct ExportOpenAPI<A: Authenticatable>: Command {
         }
 
         let openAPI = OpenAPI(
-            info: .init(title: "One App Backend"),
+            info: .init(title: title),
             servers: [.init(url: "http://127.0.0.1:8080")],
             paths: paths,
             components: .init(schemas: schemas)
@@ -193,17 +216,16 @@ extension EventLoopFuture: HasContentType where Value: Content {
 struct EmptyContent: Content {}
 
 class TestContentDecoder: ContentDecoder {
-    let decoder = TestDecoder()
-    var name: String?
+
+    var result: (TestDecoder, Any.Type)?
 
     func decode<D>(_ decodable: D.Type, from body: ByteBuffer, headers: HTTPHeaders) throws -> D where D: Decodable {
-        name = extractName(from: decodable)
-        return try decodable.init(from: decoder)
+        result = (TestDecoder(), decodable)
+        return try decodable.init(from: result!.0)
     }
 }
 
 class TestURLQueryDecoder: URLQueryDecoder {
-
     var decoders: [TestDecoder] = []
 
     func decode<D>(_ decodable: D.Type, from url: URI) throws -> D where D: Decodable {

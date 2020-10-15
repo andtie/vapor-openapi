@@ -71,11 +71,22 @@ struct OpenAPI: Encodable {
         var content: [ResponseContentFormat: ResponseContent]
     }
 
+    struct RequestBody: Encodable {
+        var description: String?
+        var content: [String: RequestContent] // "application/json"
+        var required: Bool
+    }
+
+    struct RequestContent: Encodable {
+        var schema: SchemaRef
+    }
+
     struct Operation: Encodable {
         var summary: String?
         var operationId: String
         var tags: [String]?
         var parameters: [Parameter]?
+        var requestBody: RequestBody?
         var responses: [ResponseCode: Response]
     }
 
