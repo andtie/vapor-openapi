@@ -8,6 +8,7 @@ import Foundation
 
 class TestSingleValueDecodingContainer: TestUnkeyedDecodingContainer, SingleValueDecodingContainer {
     override func decodeNil() -> Bool {
-        true
+        delegate?.isSingleValueOptional = true
+        return false
     }
 }

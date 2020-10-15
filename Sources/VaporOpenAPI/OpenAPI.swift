@@ -6,6 +6,7 @@
 
 import Foundation
 
+/// See https://swagger.io/specification/
 struct OpenAPI: Encodable {
 
     var openapi = "3.0.0"

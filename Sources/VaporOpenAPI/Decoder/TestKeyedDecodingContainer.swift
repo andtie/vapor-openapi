@@ -11,6 +11,7 @@ class TestKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainerProtocol
     var codingPath: [CodingKey] = []
 
     var optionalKeys: Set<String> = []
+    var isSingleValueOptional: Bool = false
     var schemaObject = SchemaObject()
     weak var delegate: SchemaObjectDelegate?
 
@@ -134,7 +135,8 @@ class TestKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainerProtocol
         let decoder = TestDecoder()
         defer {
             schemaObject = decoder.schemaObject
-            delegate?.update(schemaObject: &schemaObject, for: key.stringValue, required: isRequired(key))
+            let required = isRequired(key) && !decoder.isSingleValueOptional
+            delegate?.update(schemaObject: &schemaObject, for: key.stringValue, required: required)
         }
         return try T(from: decoder)
     }

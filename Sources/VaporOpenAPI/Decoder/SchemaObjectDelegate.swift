@@ -8,6 +8,7 @@ import Foundation
 
 protocol SchemaObjectDelegate: AnyObject {
     var schemaObject: SchemaObject { get set }
+    var isSingleValueOptional: Bool { get set }
 }
 
 extension SchemaObjectDelegate {

@@ -12,6 +12,7 @@ class TestDecoder: Decoder, SchemaObjectDelegate {
     var userInfo: [CodingUserInfoKey: Any] = [:]
 
     var schemaObject = SchemaObject()
+    var isSingleValueOptional: Bool = false
 
     func container<Key>(keyedBy type: Key.Type) throws -> KeyedDecodingContainer<Key> where Key: CodingKey {
         let testKeyedDecodingContainer = TestKeyedDecodingContainer<Key>()

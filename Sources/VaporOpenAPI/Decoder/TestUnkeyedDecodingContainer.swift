@@ -21,7 +21,7 @@ class TestUnkeyedDecodingContainer: UnkeyedDecodingContainer {
 
     func decodeNil() throws -> Bool {
         currentIndex += 1
-        return true
+        return false
     }
 
     func decode(_ type: Bool.Type) throws -> Bool {

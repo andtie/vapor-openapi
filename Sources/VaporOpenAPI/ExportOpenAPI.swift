@@ -6,9 +6,13 @@
 
 import Vapor
 
-public struct ExportOpenAPI: Command {
+public struct ExportOpenAPI<A: Authenticatable>: Command {
 
-    public init() {}
+    let auth: () -> A
+
+    public init(auth: @autoclosure @escaping () -> A) {
+        self.auth = auth
+    }
 
     public struct Signature: CommandSignature {
         public init() {}
@@ -20,30 +24,65 @@ public struct ExportOpenAPI: Command {
     }
 
     enum ExportError: Error {
-        case error(String?)
+        case generic
+        case text(String)
+    }
+
+    func parameters(for route: Route, of app: Application, schemas: inout [String: SchemaObject]) -> [OpenAPI.Parameter] {
+
+        let bodyDecoder = TestContentDecoder()
+        ContentConfiguration.global.use(decoder: bodyDecoder, for: .json)
+        let queryDecoder = TestURLQueryDecoder()
+        ContentConfiguration.global.use(urlDecoder: queryDecoder)
+
+        // path values might be expected in different formats, so we try some common ones
+        for pathValue in ["string", "1", UUID().uuidString, "2000-01-01T00:00:00.000Z"] {
+            var parameters = Parameters()
+            for case let .parameter(parameter) in route.path {
+                parameters.set(parameter, to: pathValue)
+            }
+            let request = Request(application: app, on: app.eventLoopGroup.next())
+            request.parameters = parameters
+            request.headers.contentType = .json
+            request.auth.login(self.auth())
+            try? request.content.encode(EmptyContent())
+
+            _ = try? route.responder.respond(to: request).wait()
+        }
+
+        return queryDecoder.decoders
+            .flatMap { decoder in
+                decoder.schemaObject.properties?.map { key, schema in
+                    OpenAPI.Parameter(
+                        name: key,
+                        in: .query,
+                        description: nil,
+                        required: decoder.schemaObject.required?.contains(key) == true,
+                        schema: schema
+                    )
+                } ?? []
+            }
+            .reduce(into: []) { result, parameter in
+                if !result.contains(where: { $0.name == parameter.name }) {
+                    result.append(parameter)
+                }
+            }
     }
 
     func response(for route: Route, schemas: inout [String: SchemaObject]) throws -> OpenAPI.Response {
         let contentType = (route.responseType as? HasContentType.Type)?.contentType ?? .json
         guard contentType == .json else {
-            throw ExportError.error("Unexpected Content Type \(contentType)")
+            throw ExportError.text("Unexpected Content Type \(contentType)")
         }
         guard let type = route.responseType as? RouteResult.Type,
               let codable = type.resultType as? Codable.Type
         else {
-            throw ExportError.error("Unexpected Result Type \(route.responseType)")
+            throw ExportError.text("Unexpected Result Type \(route.responseType)")
         }
-
-        // let contenDecoder = try ContentConfiguration.global.requireDecoder(for: contentType)
-        // let strategy = (contenDecoder as? JSONDecoder)?.dateDecodingStrategy ?? .iso8601
-
-        let name = String(reflecting: type.resultType)
-            .components(separatedBy: ".")
-            .dropFirst()
-            .joined(separator: ".")
 
         let decoder = TestDecoder()
         _ = try codable.init(from: decoder)
+        let name = extractName(from: codable)
         schemas[name] = decoder.schemaObject
 
         return .init(
@@ -56,6 +95,9 @@ public struct ExportOpenAPI: Command {
     }
 
     public func run(using context: CommandContext, signature: Signature) throws {
+
+        // let contenDecoder = try ContentConfiguration.global.requireDecoder(for: contentType)
+        // let dateDecodingStrategy = (contenDecoder as? JSONDecoder)?.dateDecodingStrategy ?? .iso8601
 
         var schemas: [String: SchemaObject] = [:]
         var paths: [String: [OpenAPI.Verb: OpenAPI.Operation]] = [:]
@@ -87,11 +129,14 @@ public struct ExportOpenAPI: Command {
                 )
             }
 
+            let parameters = pathParameters
+                + self.parameters(for: route, of: context.application, schemas: &schemas)
+
             let operation = OpenAPI.Operation(
                 summary: route.userInfo["description"] as? String,
                 operationId: operationId.joined(separator: "-"),
                 tags: nil,
-                parameters: pathParameters,
+                parameters: parameters,
                 responses: [
                     "default": try response(for: route, schemas: &schemas)
                 ]
@@ -118,6 +163,13 @@ public struct ExportOpenAPI: Command {
     }
 }
 
+private func extractName(from type: Any.Type) -> String {
+    String(reflecting: type)
+        .components(separatedBy: ".")
+        .dropFirst()
+        .joined(separator: ".")
+}
+
 private protocol RouteResult {
     static var resultType: Any.Type { get }
 }
@@ -135,5 +187,28 @@ private protocol HasContentType {
 extension EventLoopFuture: HasContentType where Value: Content {
     static var contentType: HTTPMediaType {
         Value.defaultContentType
+    }
+}
+
+struct EmptyContent: Content {}
+
+class TestContentDecoder: ContentDecoder {
+    let decoder = TestDecoder()
+    var name: String?
+
+    func decode<D>(_ decodable: D.Type, from body: ByteBuffer, headers: HTTPHeaders) throws -> D where D: Decodable {
+        name = extractName(from: decodable)
+        return try decodable.init(from: decoder)
+    }
+}
+
+class TestURLQueryDecoder: URLQueryDecoder {
+
+    var decoders: [TestDecoder] = []
+
+    func decode<D>(_ decodable: D.Type, from url: URI) throws -> D where D: Decodable {
+        let decoder = TestDecoder()
+        decoders.append(decoder)
+        return try decodable.init(from: decoder)
     }
 }
