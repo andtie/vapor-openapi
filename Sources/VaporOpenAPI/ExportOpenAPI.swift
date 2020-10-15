@@ -8,12 +8,17 @@ import Vapor
 
 public struct ExportOpenAPI<A: Authenticatable>: Command {
 
-    let auth: () -> A
-    let title: String
+    let auth: (() -> A)?
+    let postProcessor: (inout OpenAPI) -> Void
 
-    public init(title: String, auth: @autoclosure @escaping () -> A) {
+    public init(auth: @autoclosure @escaping () -> A, postProcessor: @escaping (inout OpenAPI) -> Void = { _ in }) {
         self.auth = auth
-        self.title = title
+        self.postProcessor = postProcessor
+    }
+
+    public init(postProcessor: @escaping (inout OpenAPI) -> Void = { _ in }) {
+        self.auth = nil
+        self.postProcessor = postProcessor
     }
 
     public struct Signature: CommandSignature {
@@ -46,7 +51,9 @@ public struct ExportOpenAPI<A: Authenticatable>: Command {
             let request = Request(application: app, on: app.eventLoopGroup.next())
             request.parameters = parameters
             request.headers.contentType = .json
-            request.auth.login(self.auth())
+            if let auth = self.auth?() {
+                request.auth.login(auth)
+            }
             try? request.content.encode(EmptyContent())
 
             _ = try? route.responder.respond(to: request).wait()
@@ -169,12 +176,15 @@ public struct ExportOpenAPI<A: Authenticatable>: Command {
             paths[path] = pathDict
         }
 
-        let openAPI = OpenAPI(
-            info: .init(title: title),
+        var openAPI = OpenAPI(
+            info: .init(title: "Open API"),
             servers: [.init(url: "http://127.0.0.1:8080")],
             paths: paths,
-            components: .init(schemas: schemas)
+            components: .init(schemas: schemas, securitySchemes: nil),
+            security: nil
         )
+
+        postProcessor(&openAPI)
 
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]

@@ -7,12 +7,12 @@
 import Foundation
 
 /// See also: https://swagger.io/specification/
-final class SchemaObject: Encodable {
-    enum ObjectType: String, Encodable {
+public final class SchemaObject: Encodable {
+    public enum ObjectType: String, Encodable {
         case object, array, integer, number, boolean, string
     }
 
-    enum Format: String, Encodable {
+    public enum Format: String, Encodable {
         case int32
         case int64
         case float
@@ -24,17 +24,17 @@ final class SchemaObject: Encodable {
         case password // A hint to UIs to obscure input.
     }
 
-    var type: ObjectType
-    var format: Format?
-    var required: [String]?
-    var items: SchemaObject?
-    var properties: [String: SchemaObject]?
+    public var type: ObjectType
+    public var format: Format?
+    public var required: [String]?
+    public var items: SchemaObject?
+    public var properties: [String: SchemaObject]?
 
-    init() {
+    public init() {
         type = .object
     }
 
-    init(type: ObjectType) {
+    public init(type: ObjectType) {
         self.type = type
     }
 }

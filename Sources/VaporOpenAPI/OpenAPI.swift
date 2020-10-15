@@ -7,90 +7,102 @@
 import Foundation
 
 /// See https://swagger.io/specification/
-struct OpenAPI: Encodable {
+public struct OpenAPI: Encodable {
 
-    var openapi = "3.0.0"
-    var info: Info
-    var servers: [Server]
-    var paths: [String: [Verb: Operation]]
-    var components: Components
+    public var openapi = "3.0.0"
+    public var info: Info
+    public var servers: [Server]
+    public var paths: [String: [Verb: Operation]]
+    public var components: Components
+    public var security: [[String: [String]]]?
 
-    struct Info: Encodable {
-        var version = "1.0.0"
-        var title: String
+    public struct Info: Encodable {
+        public var version = "1.0.0"
+        public var title: String
     }
 
-    struct Server: Encodable {
-        var url: String
+    public struct Server: Encodable {
+        public var url: String
     }
 
-    typealias Verb = String
+    public typealias Verb = String
 
-    enum ParameterLocation: String, Encodable {
+    public enum ParameterLocation: String, Encodable {
         case path, query, header, cookie
     }
 
-    struct Parameter: Encodable {
-        var name: String
-        var `in`: ParameterLocation
-        var description: String?
-        var required: Bool
-        var schema: SchemaObject
+    public struct Parameter: Encodable {
+        public var name: String
+        public var `in`: ParameterLocation
+        public var description: String?
+        public var required: Bool
+        public var schema: SchemaObject
     }
 
-    typealias ResponseCode = String
+    public typealias ResponseCode = String
 
-    struct ResponseHeader: Encodable {
-        var description: String?
-        var schema: SchemaObject
+    public struct ResponseHeader: Encodable {
+        public var description: String?
+        public var schema: SchemaObject
     }
 
-    struct SchemaRef: Encodable {
-        var name: String
+    public struct SchemaRef: Encodable {
+        public var name: String
 
         enum CodingKeys: String, CodingKey {
             case ref = "$ref"
         }
 
-        func encode(to encoder: Encoder) throws {
+        public func encode(to encoder: Encoder) throws {
             var container = encoder.container(keyedBy: CodingKeys.self)
             try container.encode("#/components/schemas/\(name)", forKey: .ref)
         }
     }
 
-    struct ResponseContent: Encodable {
-        var description: String?
-        var schema: SchemaRef
+    public struct ResponseContent: Encodable {
+        public var description: String?
+        public var schema: SchemaRef
     }
 
-    typealias ResponseContentFormat = String
+    public typealias ResponseContentFormat = String
 
-    struct Response: Encodable {
-        var description: String
-        var headers: [String: ResponseHeader]?
-        var content: [ResponseContentFormat: ResponseContent]
+    public struct Response: Encodable {
+        public var description: String
+        public var headers: [String: ResponseHeader]?
+        public var content: [ResponseContentFormat: ResponseContent]
     }
 
-    struct RequestBody: Encodable {
-        var description: String?
-        var content: [String: RequestContent] // "application/json"
-        var required: Bool
+    public struct RequestBody: Encodable {
+        public var description: String?
+        public var content: [String: RequestContent] // "application/json"
+        public var required: Bool
     }
 
-    struct RequestContent: Encodable {
-        var schema: SchemaRef
+    public struct RequestContent: Encodable {
+        public var schema: SchemaRef
     }
 
-    struct Operation: Encodable {
-        var summary: String?
-        var operationId: String
-        var tags: [String]?
-        var parameters: [Parameter]?
-        var requestBody: RequestBody?
-        var responses: [ResponseCode: Response]
+    public struct Operation: Encodable {
+        public var summary: String?
+        public var operationId: String
+        public var tags: [String]?
+        public var parameters: [Parameter]?
+        public var requestBody: RequestBody?
+        public var responses: [ResponseCode: Response]
     }
 
-    struct Components: Encodable {
-        var schemas: [String: SchemaObject]
+    public struct Components: Encodable {
+        public var schemas: [String: SchemaObject]
+        public var securitySchemes: [String: SecurityScheme]?
+    }
+
+    public struct SecurityScheme: Encodable {
+        public var type: String
+        public var scheme: String
+
+        public init(type: String, scheme: String) {
+            self.type = type
+            self.scheme = scheme
+        }
     }
 }
