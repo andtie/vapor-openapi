@@ -179,11 +179,11 @@ public struct ExportOpenAPI: Command {
         postProcessor(&openAPI)
 
         let encoder = JSONEncoder()
-        if #available(macOS 10.15, *) {
-            encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
-        } else {
+        #if os(Linux)
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        }
+        #else
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+        #endif
         let data = try encoder.encode(openAPI)
         let url = URL(fileURLWithPath: signature.path)
         try data.write(to: url)
