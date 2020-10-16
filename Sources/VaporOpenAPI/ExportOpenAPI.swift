@@ -6,7 +6,7 @@
 
 import Vapor
 
-public struct ExportOpenAPI<A: Authenticatable>: Command {
+public struct ExportOpenAPI: Command {
 
     let preProcessor: (Request) -> Void
     let postProcessor: (inout OpenAPI) -> Void
