@@ -98,11 +98,16 @@ public struct OpenAPI: Encodable {
 
     public struct SecurityScheme: Encodable {
         public var type: String
-        public var scheme: String
+        public var scheme: String?
+        public var `in`: ParameterLocation?
+        public var name: String?
 
-        public init(type: String, scheme: String) {
+
+        public init(type: String, scheme: String?, in: ParameterLocation?, name: String?) {
             self.type = type
             self.scheme = scheme
+            self.in = `in`
+            self.name = name
         }
     }
 }
