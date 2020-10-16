@@ -8,16 +8,11 @@ import Vapor
 
 public struct ExportOpenAPI<A: Authenticatable>: Command {
 
-    let auth: (() -> A)?
+    let preProcessor: (Request) -> Void
     let postProcessor: (inout OpenAPI) -> Void
 
-    public init(auth: @autoclosure @escaping () -> A, postProcessor: @escaping (inout OpenAPI) -> Void = { _ in }) {
-        self.auth = auth
-        self.postProcessor = postProcessor
-    }
-
-    public init(postProcessor: @escaping (inout OpenAPI) -> Void = { _ in }) {
-        self.auth = nil
+    public init(preProcessor: @escaping (Request) -> Void = { _ in }, postProcessor: @escaping (inout OpenAPI) -> Void = { _ in }) {
+        self.preProcessor = preProcessor
         self.postProcessor = postProcessor
     }
 
@@ -51,11 +46,8 @@ public struct ExportOpenAPI<A: Authenticatable>: Command {
             let request = Request(application: app, on: app.eventLoopGroup.next())
             request.parameters = parameters
             request.headers.contentType = .json
-            if let auth = self.auth?() {
-                request.auth.login(auth)
-            }
             try? request.content.encode(EmptyContent())
-
+            preProcessor(request)
             _ = try? route.responder.respond(to: request).wait()
         }
 
