@@ -118,7 +118,7 @@ public struct ExportOpenAPI: Command {
                 .joined(separator: ".")
         }
 
-        let isArray = name.hasPrefix("<Array")
+        let isArray = name.hasPrefix("Array<")
         if isArray {
             name = String(name.dropFirst("Array<".count).dropLast())
                 .components(separatedBy: ".")
