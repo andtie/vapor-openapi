@@ -129,7 +129,7 @@ public struct ExportOpenAPI: Command {
             schemas[name] = object
         }
 
-        return .init(name: name, isOptional: isOptional, isArray: false)
+        return .init(name: name, isOptional: isOptional, isArray: isArray)
     }
 
     public func run(using context: CommandContext, signature: Signature) throws {
