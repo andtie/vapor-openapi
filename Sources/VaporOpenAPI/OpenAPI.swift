@@ -23,6 +23,10 @@ public struct OpenAPI: Encodable {
 
     public struct Server: Encodable {
         public var url: String
+
+        public init(url: String) {
+            self.url = url
+        }
     }
 
     public typealias Verb = String
@@ -48,14 +52,30 @@ public struct OpenAPI: Encodable {
 
     public struct SchemaRef: Encodable {
         public var name: String
+        public var isOptional: Bool
+        public var isArray: Bool
+
+        init(name: String, isOptional: Bool, isArray: Bool) {
+            self.name = name
+            self.isOptional = isOptional
+            self.isArray = isArray
+        }
 
         enum CodingKeys: String, CodingKey {
             case ref = "$ref"
+            case type
+            case items
         }
 
         public func encode(to encoder: Encoder) throws {
             var container = encoder.container(keyedBy: CodingKeys.self)
-            try container.encode("#/components/schemas/\(name)", forKey: .ref)
+            if isArray {
+                try container.encode("array", forKey: .type)
+                var nestedContainer = container.nestedContainer(keyedBy: CodingKeys.self, forKey: .items)
+                try nestedContainer.encode("#/components/schemas/\(name)", forKey: .ref)
+            } else {
+                try container.encode("#/components/schemas/\(name)", forKey: .ref)
+            }
         }
     }
 

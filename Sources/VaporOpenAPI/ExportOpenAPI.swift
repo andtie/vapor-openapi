@@ -52,21 +52,13 @@ public struct ExportOpenAPI: Command {
         }
 
         let body: OpenAPI.RequestBody? = bodyDecoder.result.map { decoder, decodable in
-            var name = extractName(from: decodable)
-            let isOptional = name.hasPrefix("Optional<")
-            if isOptional {
-                name = String(name.dropFirst("Optional<".count).dropLast())
-                    .components(separatedBy: ".")
-                    .dropFirst()
-                    .joined(separator: ".")
-            }
-            schemas[name] = decoder.schemaObject
+            let ref = self.ref(for: decodable, object: decoder.schemaObject, schemas: &schemas)
             return OpenAPI.RequestBody(
                 description: nil,
                 content: [
-                    "application/json": .init(schema: .init(name: name))
+                    "application/json": .init(schema: ref)
                 ],
-                required: !isOptional
+                required: !ref.isOptional
             )
         }
 
@@ -104,16 +96,40 @@ public struct ExportOpenAPI: Command {
 
         let decoder = TestDecoder()
         _ = try codable.init(from: decoder)
-        let name = extractName(from: codable)
-        schemas[name] = decoder.schemaObject
+        let ref = self.ref(for: codable, object: decoder.schemaObject, schemas: &schemas)
 
         return .init(
-            description: name,
+            description: ref.name,
             headers: nil,
             content: [
-                "application/json": .init(description: nil, schema: .init(name: name))
+                "application/json": .init(description: nil, schema: ref)
             ]
         )
+    }
+
+    func ref(for type: Any.Type, object: SchemaObject, schemas: inout [String: SchemaObject]) -> OpenAPI.SchemaRef {
+        var name = extractName(from: type)
+
+        let isOptional = name.hasPrefix("Optional<")
+        if isOptional {
+            name = String(name.dropFirst("Optional<".count).dropLast())
+                .components(separatedBy: ".")
+                .dropFirst()
+                .joined(separator: ".")
+        }
+
+        let isArray = name.hasPrefix("<Array")
+        if isArray {
+            name = String(name.dropFirst("Array<".count).dropLast())
+                .components(separatedBy: ".")
+                .dropFirst()
+                .joined(separator: ".")
+            schemas[name] = object.items
+        } else {
+            schemas[name] = object
+        }
+
+        return .init(name: name, isOptional: isOptional, isArray: false)
     }
 
     public func run(using context: CommandContext, signature: Signature) throws {
