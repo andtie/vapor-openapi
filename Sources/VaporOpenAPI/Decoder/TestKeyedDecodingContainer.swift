@@ -8,6 +8,12 @@ import Foundation
 
 class TestKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainerProtocol, SchemaObjectDelegate {
 
+    let customStringTypeExamples: [String]
+
+    init(_ customStringTypeExamples: [String]) {
+        self.customStringTypeExamples = customStringTypeExamples
+    }
+
     var codingPath: [CodingKey] = []
 
     var optionalKeys: Set<String> = []
@@ -131,8 +137,16 @@ class TestKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainerProtocol
             delegate?.update(schemaObject: &schemaObject, for: key.stringValue, required: isRequired(key))
             return date
         }
+        for example in customStringTypeExamples {
+            do {
+                let value = try JSONDecoder().decode(T.self, from: Data(example.utf8))
+                schemaObject.type = .string
+                delegate?.update(schemaObject: &schemaObject, for: key.stringValue, required: isRequired(key))
+                return value
+            }
+        }
 
-        let decoder = TestDecoder()
+        let decoder = TestDecoder(customStringTypeExamples)
         defer {
             schemaObject = decoder.schemaObject
             let required = isRequired(key) && !decoder.isSingleValueOptional
@@ -143,21 +157,21 @@ class TestKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainerProtocol
 
     func nestedContainer<NestedKey>(keyedBy type: NestedKey.Type, forKey key: Key) throws -> KeyedDecodingContainer<NestedKey> where NestedKey: CodingKey {
         assertionFailure("not implemented")
-        return KeyedDecodingContainer(TestKeyedDecodingContainer<NestedKey>())
+        return KeyedDecodingContainer(TestKeyedDecodingContainer<NestedKey>(customStringTypeExamples))
     }
 
     func nestedUnkeyedContainer(forKey key: Key) throws -> UnkeyedDecodingContainer {
         assertionFailure("not implemented")
-        return TestUnkeyedDecodingContainer()
+        return TestUnkeyedDecodingContainer(customStringTypeExamples)
     }
 
     func superDecoder() throws -> Decoder {
         assertionFailure("not implemented")
-        return TestDecoder()
+        return TestDecoder(customStringTypeExamples)
     }
 
     func superDecoder(forKey key: Key) throws -> Decoder {
         assertionFailure("not implemented")
-        return TestDecoder()
+        return TestDecoder(customStringTypeExamples)
     }
 }

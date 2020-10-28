@@ -8,6 +8,12 @@ import Foundation
 
 class TestUnkeyedDecodingContainer: UnkeyedDecodingContainer {
 
+    let customStringTypeExamples: [String]
+
+    init(_ customStringTypeExamples: [String]) {
+        self.customStringTypeExamples = customStringTypeExamples
+    }
+
     var schemaObject = SchemaObject()
     weak var delegate: SchemaObjectDelegate?
 
@@ -139,8 +145,16 @@ class TestUnkeyedDecodingContainer: UnkeyedDecodingContainer {
             delegate?.update(schemaObject: &schemaObject)
             return date
         }
+        for example in customStringTypeExamples {
+            do {
+                let value = try JSONDecoder().decode(T.self, from: Data(example.utf8))
+                schemaObject.type = .string
+                delegate?.update(schemaObject: &schemaObject)
+                return value
+            }
+        }
 
-        let decoder = TestDecoder()
+        let decoder = TestDecoder(customStringTypeExamples)
         defer {
             schemaObject = decoder.schemaObject
             delegate?.update(schemaObject: &schemaObject)
@@ -151,7 +165,7 @@ class TestUnkeyedDecodingContainer: UnkeyedDecodingContainer {
 
     func nestedContainer<NestedKey>(keyedBy type: NestedKey.Type) throws -> KeyedDecodingContainer<NestedKey> where NestedKey: CodingKey {
         assertionFailure("not implemented")
-        return KeyedDecodingContainer(TestKeyedDecodingContainer())
+        return KeyedDecodingContainer(TestKeyedDecodingContainer(customStringTypeExamples))
     }
 
     func nestedUnkeyedContainer() throws -> UnkeyedDecodingContainer {
@@ -161,6 +175,6 @@ class TestUnkeyedDecodingContainer: UnkeyedDecodingContainer {
 
     func superDecoder() throws -> Decoder {
         assertionFailure("not implemented")
-        return TestDecoder()
+        return TestDecoder(customStringTypeExamples)
     }
 }

@@ -30,6 +30,11 @@ public struct ExportOpenAPI: Command {
         case text(String)
     }
 
+    /// values might be expected in different formats, so we can try some more examples
+    public static var customStringTypeExamples: [String] = [
+        "string", "1", UUID().uuidString, "2000-01-01T00:00:00.000Z", "default"
+    ]
+
     func parameters(for route: Route, of app: Application, schemas: inout [String: SchemaObject]) -> (OpenAPI.RequestBody?, [OpenAPI.Parameter]) {
 
         let bodyDecoder = TestContentDecoder()
@@ -38,7 +43,7 @@ public struct ExportOpenAPI: Command {
         ContentConfiguration.global.use(urlDecoder: queryDecoder)
 
         // path values might be expected in different formats, so we try some common ones
-        for pathValue in ["string", "1", UUID().uuidString, "2000-01-01T00:00:00.000Z"] {
+        for pathValue in Self.customStringTypeExamples {
             var parameters = Parameters()
             for case let .parameter(parameter) in route.path {
                 parameters.set(parameter, to: pathValue)
@@ -94,7 +99,7 @@ public struct ExportOpenAPI: Command {
             throw ExportError.text("Unexpected Result Type \(route.responseType)")
         }
 
-        let decoder = TestDecoder()
+        let decoder = TestDecoder(Self.customStringTypeExamples)
         _ = try codable.init(from: decoder)
         let ref = self.ref(for: codable, object: decoder.schemaObject, schemas: &schemas)
 
@@ -242,7 +247,7 @@ class TestContentDecoder: ContentDecoder {
     var result: (TestDecoder, Any.Type)?
 
     func decode<D>(_ decodable: D.Type, from body: ByteBuffer, headers: HTTPHeaders) throws -> D where D: Decodable {
-        result = (TestDecoder(), decodable)
+        result = (TestDecoder(ExportOpenAPI.customStringTypeExamples), decodable)
         return try decodable.init(from: result!.0)
     }
 }
@@ -251,7 +256,7 @@ class TestURLQueryDecoder: URLQueryDecoder {
     var decoders: [TestDecoder] = []
 
     func decode<D>(_ decodable: D.Type, from url: URI) throws -> D where D: Decodable {
-        let decoder = TestDecoder()
+        let decoder = TestDecoder(ExportOpenAPI.customStringTypeExamples)
         decoders.append(decoder)
         return try decodable.init(from: decoder)
     }
