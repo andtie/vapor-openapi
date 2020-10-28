@@ -151,7 +151,7 @@ class TestUnkeyedDecodingContainer: UnkeyedDecodingContainer {
                 schemaObject.type = .string
                 delegate?.update(schemaObject: &schemaObject)
                 return value
-            }
+            } catch {}
         }
 
         let decoder = TestDecoder(customStringTypeExamples)

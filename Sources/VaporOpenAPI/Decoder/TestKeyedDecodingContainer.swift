@@ -143,7 +143,7 @@ class TestKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainerProtocol
                 schemaObject.type = .string
                 delegate?.update(schemaObject: &schemaObject, for: key.stringValue, required: isRequired(key))
                 return value
-            }
+            } catch {}
         }
 
         let decoder = TestDecoder(customStringTypeExamples)
