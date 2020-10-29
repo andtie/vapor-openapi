@@ -32,7 +32,7 @@ public struct ExportOpenAPI: Command {
 
     /// values might be expected in different formats, so we can try some more examples
     public static var customStringTypeExamples: [String] = [
-        "string", "1", UUID().uuidString, "2000-01-01T00:00:00.000Z", "default"
+        "string", UUID().uuidString, "2000-01-01T00:00:00.000Z"
     ]
 
     func parameters(for route: Route, of app: Application, schemas: inout [String: SchemaObject]) -> (OpenAPI.RequestBody?, [OpenAPI.Parameter]) {

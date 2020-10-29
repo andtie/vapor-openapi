@@ -143,24 +143,29 @@ class TestUnkeyedDecodingContainer: UnkeyedDecodingContainer {
             schemaObject.type = .string
             schemaObject.format = .dateTime
             delegate?.update(schemaObject: &schemaObject)
+            currentIndex += 1
             return date
         }
-        for example in customStringTypeExamples {
-            do {
-                let value = try JSONDecoder().decode(T.self, from: Data(example.utf8))
-                schemaObject.type = .string
-                delegate?.update(schemaObject: &schemaObject)
-                return value
-            } catch {}
-        }
 
-        let decoder = TestDecoder(customStringTypeExamples)
-        defer {
+        do {
+            let decoder = TestDecoder(customStringTypeExamples)
+            let value = try T(from: decoder)
             schemaObject = decoder.schemaObject
             delegate?.update(schemaObject: &schemaObject)
+            currentIndex += 1
+            return value
+        } catch {
+            for example in customStringTypeExamples {
+                do {
+                    let value = try JSONDecoder().decode(T.self, from: Data(example.utf8))
+                    schemaObject.type = .string
+                    delegate?.update(schemaObject: &schemaObject)
+                    currentIndex += 1
+                    return value
+                } catch {}
+            }
+            throw error
         }
-        currentIndex += 1
-        return try T(from: decoder)
     }
 
     func nestedContainer<NestedKey>(keyedBy type: NestedKey.Type) throws -> KeyedDecodingContainer<NestedKey> where NestedKey: CodingKey {
