@@ -8,10 +8,10 @@ import Foundation
 
 class TestUnkeyedDecodingContainer: UnkeyedDecodingContainer {
 
-    let schemaExamples: [SchemaExample]
+    let configuration: Configuration
 
-    init(_ schemaExamples: [SchemaExample]) {
-        self.schemaExamples = schemaExamples
+    init(_ configuration: Configuration) {
+        self.configuration = configuration
     }
 
     var schemaObject = SchemaObject()
@@ -133,15 +133,15 @@ class TestUnkeyedDecodingContainer: UnkeyedDecodingContainer {
     }
 
     func decode<T>(_ type: T.Type) throws -> T where T: Decodable {
-        for example in schemaExamples {
-            if let value = try? example.value(for: type) {
+        for example in configuration.schemaExamples {
+            if let value = try? example.value(for: type, configuration: configuration, location: .body) {
                 schemaObject = example.schema
                 delegate?.update(schemaObject: &schemaObject)
                 currentIndex += 1
                 return value
             }
         }
-        let decoder = TestDecoder(schemaExamples)
+        let decoder = TestDecoder(configuration)
         let value = try T(from: decoder)
         schemaObject = decoder.schemaObject
         delegate?.update(schemaObject: &schemaObject)
@@ -151,7 +151,7 @@ class TestUnkeyedDecodingContainer: UnkeyedDecodingContainer {
 
     func nestedContainer<NestedKey>(keyedBy type: NestedKey.Type) throws -> KeyedDecodingContainer<NestedKey> where NestedKey: CodingKey {
         assertionFailure("not implemented")
-        return KeyedDecodingContainer(TestKeyedDecodingContainer(schemaExamples))
+        return KeyedDecodingContainer(TestKeyedDecodingContainer(configuration))
     }
 
     func nestedUnkeyedContainer() throws -> UnkeyedDecodingContainer {
@@ -161,6 +161,6 @@ class TestUnkeyedDecodingContainer: UnkeyedDecodingContainer {
 
     func superDecoder() throws -> Decoder {
         assertionFailure("not implemented")
-        return TestDecoder(schemaExamples)
+        return TestDecoder(configuration)
     }
 }

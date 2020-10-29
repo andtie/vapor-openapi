@@ -8,10 +8,10 @@ import Foundation
 
 class TestKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainerProtocol, SchemaObjectDelegate {
 
-    let schemaExamples: [SchemaExample]
+    let configuration: Configuration
 
-    init(_ schemaExamples: [SchemaExample]) {
-        self.schemaExamples = schemaExamples
+    init(_ configuration: Configuration) {
+        self.configuration = configuration
     }
 
     var codingPath: [CodingKey] = []
@@ -126,14 +126,14 @@ class TestKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainerProtocol
     }
 
     func decode<T>(_ type: T.Type, forKey key: Key) throws -> T where T: Decodable {
-        for example in schemaExamples {
-            if let value = try? example.value(for: type) {
+        for example in configuration.schemaExamples {
+            if let value = try? example.value(for: type, configuration: configuration, location: .body) {
                 schemaObject = example.schema
                 delegate?.update(schemaObject: &schemaObject, for: key.stringValue, required: isRequired(key))
                 return value
             }
         }
-        let decoder = TestDecoder(schemaExamples)
+        let decoder = TestDecoder(configuration)
         defer {
             schemaObject = decoder.schemaObject
             let required = isRequired(key) && !decoder.isSingleValueOptional
@@ -144,21 +144,21 @@ class TestKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainerProtocol
 
     func nestedContainer<NestedKey>(keyedBy type: NestedKey.Type, forKey key: Key) throws -> KeyedDecodingContainer<NestedKey> where NestedKey: CodingKey {
         assertionFailure("not implemented")
-        return KeyedDecodingContainer(TestKeyedDecodingContainer<NestedKey>(schemaExamples))
+        return KeyedDecodingContainer(TestKeyedDecodingContainer<NestedKey>(configuration))
     }
 
     func nestedUnkeyedContainer(forKey key: Key) throws -> UnkeyedDecodingContainer {
         assertionFailure("not implemented")
-        return TestUnkeyedDecodingContainer(schemaExamples)
+        return TestUnkeyedDecodingContainer(configuration)
     }
 
     func superDecoder() throws -> Decoder {
         assertionFailure("not implemented")
-        return TestDecoder(schemaExamples)
+        return TestDecoder(configuration)
     }
 
     func superDecoder(forKey key: Key) throws -> Decoder {
         assertionFailure("not implemented")
-        return TestDecoder(schemaExamples)
+        return TestDecoder(configuration)
     }
 }

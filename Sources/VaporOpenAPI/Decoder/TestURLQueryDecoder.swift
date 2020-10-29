@@ -8,16 +8,16 @@ import Vapor
 
 class TestURLQueryDecoder: URLQueryDecoder {
 
-    let schemaExamples: [SchemaExample]
+    let configuration: Configuration
 
-    init(_ schemaExamples: [SchemaExample]) {
-        self.schemaExamples = schemaExamples
+    init(_ configuration: Configuration) {
+        self.configuration = configuration
     }
 
     var decoders: [TestDecoder] = []
 
     func decode<D>(_ decodable: D.Type, from url: URI) throws -> D where D: Decodable {
-        let decoder = TestDecoder(schemaExamples)
+        let decoder = TestDecoder(configuration)
         decoders.append(decoder)
         return try decodable.init(from: decoder)
     }

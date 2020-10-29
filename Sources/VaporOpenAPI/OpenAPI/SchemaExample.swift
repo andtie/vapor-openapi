@@ -7,29 +7,50 @@
 import Foundation
 import Vapor
 
-struct SchemaExample {
+public struct SchemaExample {
 
-    let data: Data
-    let schema: SchemaObject
+    public let schema: SchemaObject
 
-    init(data: Data, for schema: SchemaObject) {
-        self.data = data
+    public init(data: Data, for schema: SchemaObject) {
+        self.data = { _, _ in data }
         self.schema = schema
     }
 
-    init?<T: Codable>(example: T, for schema: SchemaObject) {
-        guard let encoder = try? ContentConfiguration.global.requireEncoder(for: .json)
-        else { return nil }
-        var headers = HTTPHeaders()
-        var byteBuffer = ByteBuffer()
-        try? encoder.encode(example, to: &byteBuffer, headers: &headers)
-        guard let data = byteBuffer.getData(at: byteBuffer.readerIndex, length: byteBuffer.readableBytes)
-        else { return nil }
-        self.data = data
+    public init<T: Codable>(example: T, for schema: SchemaObject) {
         self.schema = schema
+        self.data = { Self.data(example: example, configuration: $0, location: $1) }
     }
 
-    func value<T: Decodable>(for type: T.Type) throws -> T {
-        try ExportOpenAPI.previousBodyDecoder!.decode(T.self, from: .init(data: data), headers: .init())
+    let data: (Configuration, Location) -> Data?
+
+    enum Location {
+        case header, body, path
+    }
+
+    enum SchemaExampleError: Error {
+        case couldNotCreateData
+    }
+
+    static func data<T: Codable>(example: T, configuration: Configuration, location: Location) -> Data? {
+        let contentConfig = configuration.contentConfiguration
+        switch location {
+        case .header, .body:
+            guard let encoder = try? contentConfig.requireEncoder(for: .json) else { return nil }
+            var headers = HTTPHeaders()
+            var byteBuffer = ByteBuffer()
+            try? encoder.encode(example, to: &byteBuffer, headers: &headers)
+            return byteBuffer.getData(at: byteBuffer.readerIndex, length: byteBuffer.readableBytes)
+        case .path:
+            guard let encoder = try? contentConfig.requireURLEncoder() else { return nil }
+            var uri = URI()
+            try? encoder.encode(example, to: &uri)
+            return uri.query.map { Data($0.utf8) }
+        }
+    }
+
+    func value<T: Decodable>(for type: T.Type, configuration: Configuration, location: Location) throws -> T {
+        guard let data = self.data(configuration, location)
+        else { throw SchemaExampleError.couldNotCreateData }
+        return try configuration.bodyDecoder.decode(T.self, from: .init(data: data), headers: .init())
     }
 }
