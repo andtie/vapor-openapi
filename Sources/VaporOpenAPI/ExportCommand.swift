@@ -1,12 +1,12 @@
 //
-// ExportOpenAPI.swift
+// ExportCommand.swift
 //
 // Created by Andreas in 2020
 //
 
 import Vapor
 
-public struct ExportOpenAPI: Command {
+public struct ExportCommand: Command {
 
     var configuration: Configuration
 
@@ -44,48 +44,9 @@ public struct ExportOpenAPI: Command {
         var paths: [String: [OpenAPI.Verb: OpenAPI.Operation]] = [:]
 
         for route in context.application.routes.all {
-            let path = "/" + route.path
-                .map { component in
-                    switch component {
-                    case .parameter(let parameter):
-                        return "{\(parameter)}"
-                    default:
-                        return "\(component)"
-                    }
-                }
-                .joined(separator: "/")
-
-            let pathParameters = route.path.compactMap { component -> OpenAPI.Parameter? in
-                guard case let .parameter(parameter) = component else { return nil }
-                return OpenAPI.Parameter(
-                    name: parameter,
-                    in: .path,
-                    description: nil,
-                    required: true,
-                    schema: SchemaObject(type: .string)
-                )
-            }
-
-            var pathDict = paths[path] ?? [:]
-            let verb = route.method.rawValue.lowercased()
-            let operationId = route.path.map { "\($0)" } + [verb]
-
-            let exporter = ParameterExporter(configuration: configuration)
-            let (body, queries) = try exporter.parameters(for: route, of: context.application, schemas: &schemas)
-
-            let operation = OpenAPI.Operation(
-                summary: route.userInfo["description"] as? String,
-                operationId: operationId.joined(separator: "-"),
-                tags: nil,
-                parameters: pathParameters + queries,
-                requestBody: body,
-                responses: [
-                    "default": try response(for: route, schemas: &schemas)
-                ]
-            )
-
-            pathDict[verb] = operation
-            paths[path] = pathDict
+            var pathDict = paths[route.apiPath] ?? [:]
+            pathDict[route.verb] = try operation(for: route, app: context.application, schemas: &schemas)
+            paths[route.apiPath] = pathDict
         }
 
         var openAPI = OpenAPI(
@@ -112,6 +73,22 @@ public struct ExportOpenAPI: Command {
     }
 
     // MARK: - Private
+
+    private func operation(for route: Route, app: Application, schemas: inout [String: SchemaObject]) throws -> OpenAPI.Operation {
+        let exporter = ParameterExporter(configuration: configuration)
+        let (body, queries) = try exporter.parameters(for: route, of: app, schemas: &schemas)
+        let operationId = route.path.map { "\($0)" } + [route.verb]
+        return OpenAPI.Operation(
+            summary: route.userInfo["description"] as? String,
+            operationId: operationId.joined(separator: "-"),
+            tags: nil,
+            parameters: route.apiParamaters + queries,
+            requestBody: body,
+            responses: [
+                "default": try response(for: route, schemas: &schemas)
+            ]
+        )
+    }
 
     private func response(for route: Route, schemas: inout [String: SchemaObject]) throws -> OpenAPI.Response {
         let contentType = (route.responseType as? HasContentType.Type)?.contentType ?? .json
