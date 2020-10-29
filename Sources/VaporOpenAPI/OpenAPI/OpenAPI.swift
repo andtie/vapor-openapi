@@ -16,9 +16,30 @@ public struct OpenAPI: Encodable {
     public var components: Components
     public var security: [[String: [String]]]?
 
+    public init(
+        info: Info,
+        servers: [Server],
+        paths: [String: [Verb: Operation]],
+        components: Components,
+        security: [[String: [String]]]?,
+        openapi: String = "3.0.0"
+    ) {
+        self.info = info
+        self.servers = servers
+        self.paths = paths
+        self.components = components
+        self.security = security
+        self.openapi = openapi
+    }
+
     public struct Info: Encodable {
         public var version = "1.0.0"
         public var title: String
+
+        public init(title: String, version: String = "1.0.0") {
+            self.title = title
+            self.version = version
+        }
     }
 
     public struct Server: Encodable {
@@ -41,6 +62,14 @@ public struct OpenAPI: Encodable {
         public var description: String?
         public var required: Bool
         public var schema: SchemaObject
+
+        public init(name: String, in: ParameterLocation, description: String?, required: Bool, schema: SchemaObject) {
+            self.name = name
+            self.in = `in`
+            self.description = description
+            self.required = required
+            self.schema = schema
+        }
     }
 
     public typealias ResponseCode = String
@@ -48,6 +77,11 @@ public struct OpenAPI: Encodable {
     public struct ResponseHeader: Encodable {
         public var description: String?
         public var schema: SchemaObject
+
+        public init(description: String?, schema: SchemaObject) {
+            self.description = description
+            self.schema = schema
+        }
     }
 
     public struct SchemaRef: Encodable {
@@ -55,7 +89,7 @@ public struct OpenAPI: Encodable {
         public var isOptional: Bool
         public var isArray: Bool
 
-        init(name: String, isOptional: Bool, isArray: Bool) {
+        public init(name: String, isOptional: Bool, isArray: Bool) {
             self.name = name
             self.isOptional = isOptional
             self.isArray = isArray
@@ -82,6 +116,11 @@ public struct OpenAPI: Encodable {
     public struct ResponseContent: Encodable {
         public var description: String?
         public var schema: SchemaRef
+
+        public init(description: String?, schema: SchemaRef) {
+            self.description = description
+            self.schema = schema
+        }
     }
 
     public typealias ResponseContentFormat = String
@@ -90,16 +129,31 @@ public struct OpenAPI: Encodable {
         public var description: String
         public var headers: [String: ResponseHeader]?
         public var content: [ResponseContentFormat: ResponseContent]
+
+        public init(description: String, headers: [String: ResponseHeader]?, content: [ResponseContentFormat: ResponseContent]) {
+            self.description = description
+            self.headers = headers
+            self.content = content
+        }
     }
 
     public struct RequestBody: Encodable {
         public var description: String?
         public var content: [String: RequestContent] // "application/json"
         public var required: Bool
+
+        public init(description: String?, content: [String: RequestContent], required: Bool) {
+            self.description = description
+            self.content = content
+            self.required = required
+        }
     }
 
     public struct RequestContent: Encodable {
         public var schema: SchemaRef
+        public init(schema: SchemaRef) {
+            self.schema = schema
+        }
     }
 
     public struct Operation: Encodable {
@@ -109,11 +163,31 @@ public struct OpenAPI: Encodable {
         public var parameters: [Parameter]?
         public var requestBody: RequestBody?
         public var responses: [ResponseCode: Response]
+
+        public init(
+            summary: String?,
+            operationId: String,
+            tags: [String]?,
+            parameters: [Parameter]?,
+            requestBody: RequestBody?,
+            responses: [ResponseCode: Response]
+        ) {
+            self.operationId = operationId
+            self.tags = tags
+            self.parameters = parameters
+            self.requestBody = requestBody
+            self.responses = responses
+        }
     }
 
     public struct Components: Encodable {
         public var schemas: [String: SchemaObject]
         public var securitySchemes: [String: SecurityScheme]?
+
+        public init(schemas: [String: SchemaObject], securitySchemes: [String: SecurityScheme]?) {
+            self.schemas = schemas
+            self.securitySchemes = securitySchemes
+        }
     }
 
     public struct SecurityScheme: Encodable {
