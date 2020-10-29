@@ -122,7 +122,6 @@ public struct OpenAPI: Encodable {
         public var `in`: ParameterLocation?
         public var name: String?
 
-
         public init(type: String, scheme: String?, in: ParameterLocation?, name: String?) {
             self.type = type
             self.scheme = scheme

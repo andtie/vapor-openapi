@@ -18,7 +18,7 @@ public struct Configuration {
         contentConfiguration: .global,
         schemaExamples: [
             SchemaExample(example: UUID(), for: SchemaObject(type: .string)),
-            SchemaExample(example: Date(), for: SchemaObject(type: .string, format: .dateTime)),
+            SchemaExample(example: Date(), for: SchemaObject(type: .string, format: .dateTime))
         ]
     )
 
@@ -26,7 +26,6 @@ public struct Configuration {
         (try? contentConfiguration.requireDecoder(for: .json))
             ?? JSONDecoder.custom(dates: .iso8601)
     }
-
 
     public var urlLDecoder: URLQueryDecoder {
         (try? contentConfiguration.requireURLDecoder())

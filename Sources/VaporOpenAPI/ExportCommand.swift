@@ -8,13 +8,9 @@ import Vapor
 
 public struct ExportCommand: Command {
 
-    var configuration: Configuration
+    public var configuration: Configuration = .default
 
-    public init(preProcessor: @escaping (Request) -> Void = { _ in }, postProcessor: @escaping (inout OpenAPI) -> Void = { _ in }) {
-        configuration = Configuration.default
-        configuration.preProcessor = preProcessor
-        configuration.postProcessor = postProcessor
-    }
+    public init() {}
 
     public struct Signature: CommandSignature {
         public init() {}
