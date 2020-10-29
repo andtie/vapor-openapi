@@ -8,10 +8,10 @@ import Foundation
 
 class TestDecoder: Decoder, SchemaObjectDelegate {
 
-    let customStringTypeExamples: [String]
+    let schemaExamples: [SchemaExample]
 
-    init(_ customStringTypeExamples: [String]) {
-        self.customStringTypeExamples = customStringTypeExamples
+    init(_ schemaExamples: [SchemaExample]) {
+        self.schemaExamples = schemaExamples
     }
 
     var codingPath: [CodingKey] = []
@@ -21,20 +21,20 @@ class TestDecoder: Decoder, SchemaObjectDelegate {
     var isSingleValueOptional: Bool = false
 
     func container<Key>(keyedBy type: Key.Type) throws -> KeyedDecodingContainer<Key> where Key: CodingKey {
-        let testKeyedDecodingContainer = TestKeyedDecodingContainer<Key>(customStringTypeExamples)
+        let testKeyedDecodingContainer = TestKeyedDecodingContainer<Key>(schemaExamples)
         testKeyedDecodingContainer.delegate = self
         return KeyedDecodingContainer(testKeyedDecodingContainer)
     }
 
     func unkeyedContainer() throws -> UnkeyedDecodingContainer {
         schemaObject.type = .array
-        let testUnkeyedDecodingContainer = TestUnkeyedDecodingContainer(customStringTypeExamples)
+        let testUnkeyedDecodingContainer = TestUnkeyedDecodingContainer(schemaExamples)
         testUnkeyedDecodingContainer.delegate = self
         return testUnkeyedDecodingContainer
     }
 
     func singleValueContainer() throws -> SingleValueDecodingContainer {
-        let testSingleValueDecodingContainer = TestSingleValueDecodingContainer(customStringTypeExamples)
+        let testSingleValueDecodingContainer = TestSingleValueDecodingContainer(schemaExamples)
         testSingleValueDecodingContainer.delegate = self
         return testSingleValueDecodingContainer
     }

@@ -8,10 +8,10 @@ import Foundation
 
 class TestKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainerProtocol, SchemaObjectDelegate {
 
-    let customStringTypeExamples: [String]
+    let schemaExamples: [SchemaExample]
 
-    init(_ customStringTypeExamples: [String]) {
-        self.customStringTypeExamples = customStringTypeExamples
+    init(_ schemaExamples: [SchemaExample]) {
+        self.schemaExamples = schemaExamples
     }
 
     var codingPath: [CodingKey] = []
@@ -126,27 +126,14 @@ class TestKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainerProtocol
     }
 
     func decode<T>(_ type: T.Type, forKey key: Key) throws -> T where T: Decodable {
-        if type == UUID.self, let uuid = UUID() as? T {
-            schemaObject.type = .string
-            delegate?.update(schemaObject: &schemaObject, for: key.stringValue, required: isRequired(key))
-            return uuid
-        }
-        if type == Date.self, let date = Date() as? T {
-            schemaObject.type = .string
-            schemaObject.format = .dateTime
-            delegate?.update(schemaObject: &schemaObject, for: key.stringValue, required: isRequired(key))
-            return date
-        }
-        for example in customStringTypeExamples {
-            do {
-                let value = try JSONDecoder().decode(T.self, from: Data(example.utf8))
-                schemaObject.type = .string
+        for example in schemaExamples {
+            if let value = try? example.value(for: type) {
+                schemaObject = example.schema
                 delegate?.update(schemaObject: &schemaObject, for: key.stringValue, required: isRequired(key))
                 return value
-            } catch {}
+            }
         }
-
-        let decoder = TestDecoder(customStringTypeExamples)
+        let decoder = TestDecoder(schemaExamples)
         defer {
             schemaObject = decoder.schemaObject
             let required = isRequired(key) && !decoder.isSingleValueOptional
@@ -157,21 +144,21 @@ class TestKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainerProtocol
 
     func nestedContainer<NestedKey>(keyedBy type: NestedKey.Type, forKey key: Key) throws -> KeyedDecodingContainer<NestedKey> where NestedKey: CodingKey {
         assertionFailure("not implemented")
-        return KeyedDecodingContainer(TestKeyedDecodingContainer<NestedKey>(customStringTypeExamples))
+        return KeyedDecodingContainer(TestKeyedDecodingContainer<NestedKey>(schemaExamples))
     }
 
     func nestedUnkeyedContainer(forKey key: Key) throws -> UnkeyedDecodingContainer {
         assertionFailure("not implemented")
-        return TestUnkeyedDecodingContainer(customStringTypeExamples)
+        return TestUnkeyedDecodingContainer(schemaExamples)
     }
 
     func superDecoder() throws -> Decoder {
         assertionFailure("not implemented")
-        return TestDecoder(customStringTypeExamples)
+        return TestDecoder(schemaExamples)
     }
 
     func superDecoder(forKey key: Key) throws -> Decoder {
         assertionFailure("not implemented")
-        return TestDecoder(customStringTypeExamples)
+        return TestDecoder(schemaExamples)
     }
 }

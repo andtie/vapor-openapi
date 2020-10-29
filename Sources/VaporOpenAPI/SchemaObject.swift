@@ -29,12 +29,15 @@ public final class SchemaObject: Encodable {
     public var required: [String]?
     public var items: SchemaObject?
     public var properties: [String: SchemaObject]?
+    public var description: String?
 
     public init() {
         type = .object
     }
 
-    public init(type: ObjectType) {
+    public init(type: ObjectType, format: Format? = nil, description: String? = nil) {
         self.type = type
+        self.format = format
+        self.description = description
     }
 }

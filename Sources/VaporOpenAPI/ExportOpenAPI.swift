@@ -25,28 +25,49 @@ public struct ExportOpenAPI: Command {
         "exports all configured routes"
     }
 
+    public mutating func add<T: Codable>(example: T, for schema: SchemaObject) {
+        if let schemaExample = SchemaExample(example: example, for: schema) {
+            schemaExamples.append(schemaExample)
+        }
+    }
+
+    public mutating func add(exampleData: Data, for schema: SchemaObject) {
+        schemaExamples.append(SchemaExample(data: exampleData, for: schema))
+    }
+
     enum ExportError: Error {
         case generic
         case text(String)
     }
 
-    /// values might be expected in different formats, so we can try some more examples
-    public static var customStringTypeExamples: [String] = [
-        "string", UUID().uuidString, "2000-01-01T00:00:00.000Z"
-    ]
+    var schemaExamples: [SchemaExample] = [
+        SchemaExample(example: UUID(), for: SchemaObject(type: .string)),
+        SchemaExample(example: Date(), for: SchemaObject(type: .string, format: .dateTime)),
+    ].compactMap { $0 }
 
-    func parameters(for route: Route, of app: Application, schemas: inout [String: SchemaObject]) -> (OpenAPI.RequestBody?, [OpenAPI.Parameter]) {
+    static var previousBodyDecoder: ContentDecoder?
+    static var previousURLDecoder: URLQueryDecoder?
 
-        let bodyDecoder = TestContentDecoder()
+    func parameters(for route: Route, of app: Application, schemas: inout [String: SchemaObject]) throws -> (OpenAPI.RequestBody?, [OpenAPI.Parameter]) {
+
+        let bodyDecoder = TestContentDecoder(schemaExamples)
+        Self.previousBodyDecoder = try ContentConfiguration.global.requireDecoder(for: .json)
         ContentConfiguration.global.use(decoder: bodyDecoder, for: .json)
-        let queryDecoder = TestURLQueryDecoder()
+        defer { Self.previousBodyDecoder.map { ContentConfiguration.global.use(decoder: $0, for: .json) } }
+
+        let queryDecoder = TestURLQueryDecoder(schemaExamples)
+        Self.previousURLDecoder = try ContentConfiguration.global.requireURLDecoder()
         ContentConfiguration.global.use(urlDecoder: queryDecoder)
+        defer { Self.previousURLDecoder.map { ContentConfiguration.global.use(urlDecoder: $0) } }
 
         // path values might be expected in different formats, so we try some common ones
-        for pathValue in Self.customStringTypeExamples {
+        for example in schemaExamples {
             var parameters = Parameters()
             for case let .parameter(parameter) in route.path {
-                parameters.set(parameter, to: pathValue)
+                if var string = String(data: example.data, encoding: .utf8) {
+                    string = string.trimmingCharacters(in: .init(charactersIn: "\""))
+                    parameters.set(parameter, to: string)
+                }
             }
             let request = Request(application: app, on: app.eventLoopGroup.next())
             request.parameters = parameters
@@ -99,7 +120,7 @@ public struct ExportOpenAPI: Command {
             throw ExportError.text("Unexpected Result Type \(route.responseType)")
         }
 
-        let decoder = TestDecoder(Self.customStringTypeExamples)
+        let decoder = TestDecoder(schemaExamples)
         _ = try codable.init(from: decoder)
         let ref = self.ref(for: codable, object: decoder.schemaObject, schemas: &schemas)
 
@@ -139,9 +160,6 @@ public struct ExportOpenAPI: Command {
 
     public func run(using context: CommandContext, signature: Signature) throws {
 
-        // let contenDecoder = try ContentConfiguration.global.requireDecoder(for: contentType)
-        // let dateDecodingStrategy = (contenDecoder as? JSONDecoder)?.dateDecodingStrategy ?? .iso8601
-
         var schemas: [String: SchemaObject] = [:]
         var paths: [String: [OpenAPI.Verb: OpenAPI.Operation]] = [:]
 
@@ -172,7 +190,7 @@ public struct ExportOpenAPI: Command {
             let verb = route.method.rawValue.lowercased()
             let operationId = route.path.map { "\($0)" } + [verb]
 
-            let (body, queries) = parameters(for: route, of: context.application, schemas: &schemas)
+            let (body, queries) = try parameters(for: route, of: context.application, schemas: &schemas)
 
             let operation = OpenAPI.Operation(
                 summary: route.userInfo["description"] as? String,
@@ -244,19 +262,32 @@ struct EmptyContent: Content {}
 
 class TestContentDecoder: ContentDecoder {
 
+    let schemaExamples: [SchemaExample]
+
+    init(_ schemaExamples: [SchemaExample]) {
+        self.schemaExamples = schemaExamples
+    }
+
     var result: (TestDecoder, Any.Type)?
 
     func decode<D>(_ decodable: D.Type, from body: ByteBuffer, headers: HTTPHeaders) throws -> D where D: Decodable {
-        result = (TestDecoder(ExportOpenAPI.customStringTypeExamples), decodable)
+        result = (TestDecoder(schemaExamples), decodable)
         return try decodable.init(from: result!.0)
     }
 }
 
 class TestURLQueryDecoder: URLQueryDecoder {
+
+    let schemaExamples: [SchemaExample]
+
+    init(_ schemaExamples: [SchemaExample]) {
+        self.schemaExamples = schemaExamples
+    }
+
     var decoders: [TestDecoder] = []
 
     func decode<D>(_ decodable: D.Type, from url: URI) throws -> D where D: Decodable {
-        let decoder = TestDecoder(ExportOpenAPI.customStringTypeExamples)
+        let decoder = TestDecoder(schemaExamples)
         decoders.append(decoder)
         return try decodable.init(from: decoder)
     }

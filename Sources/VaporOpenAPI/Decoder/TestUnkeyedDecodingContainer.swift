@@ -8,10 +8,10 @@ import Foundation
 
 class TestUnkeyedDecodingContainer: UnkeyedDecodingContainer {
 
-    let customStringTypeExamples: [String]
+    let schemaExamples: [SchemaExample]
 
-    init(_ customStringTypeExamples: [String]) {
-        self.customStringTypeExamples = customStringTypeExamples
+    init(_ schemaExamples: [SchemaExample]) {
+        self.schemaExamples = schemaExamples
     }
 
     var schemaObject = SchemaObject()
@@ -133,44 +133,25 @@ class TestUnkeyedDecodingContainer: UnkeyedDecodingContainer {
     }
 
     func decode<T>(_ type: T.Type) throws -> T where T: Decodable {
-        if type == UUID.self, let uuid = UUID() as? T {
-            schemaObject.type = .string
-            delegate?.update(schemaObject: &schemaObject)
-            currentIndex += 1
-            return uuid
-        }
-        if type == Date.self, let date = Date() as? T {
-            schemaObject.type = .string
-            schemaObject.format = .dateTime
-            delegate?.update(schemaObject: &schemaObject)
-            currentIndex += 1
-            return date
-        }
-
-        do {
-            let decoder = TestDecoder(customStringTypeExamples)
-            let value = try T(from: decoder)
-            schemaObject = decoder.schemaObject
-            delegate?.update(schemaObject: &schemaObject)
-            currentIndex += 1
-            return value
-        } catch {
-            for example in customStringTypeExamples {
-                do {
-                    let value = try JSONDecoder().decode(T.self, from: Data(example.utf8))
-                    schemaObject.type = .string
-                    delegate?.update(schemaObject: &schemaObject)
-                    currentIndex += 1
-                    return value
-                } catch {}
+        for example in schemaExamples {
+            if let value = try? example.value(for: type) {
+                schemaObject = example.schema
+                delegate?.update(schemaObject: &schemaObject)
+                currentIndex += 1
+                return value
             }
-            throw error
         }
+        let decoder = TestDecoder(schemaExamples)
+        let value = try T(from: decoder)
+        schemaObject = decoder.schemaObject
+        delegate?.update(schemaObject: &schemaObject)
+        currentIndex += 1
+        return value
     }
 
     func nestedContainer<NestedKey>(keyedBy type: NestedKey.Type) throws -> KeyedDecodingContainer<NestedKey> where NestedKey: CodingKey {
         assertionFailure("not implemented")
-        return KeyedDecodingContainer(TestKeyedDecodingContainer(customStringTypeExamples))
+        return KeyedDecodingContainer(TestKeyedDecodingContainer(schemaExamples))
     }
 
     func nestedUnkeyedContainer() throws -> UnkeyedDecodingContainer {
@@ -180,6 +161,6 @@ class TestUnkeyedDecodingContainer: UnkeyedDecodingContainer {
 
     func superDecoder() throws -> Decoder {
         assertionFailure("not implemented")
-        return TestDecoder(customStringTypeExamples)
+        return TestDecoder(schemaExamples)
     }
 }
