@@ -72,6 +72,7 @@ public struct ExportOpenAPI: Command {
             let request = Request(application: app, on: app.eventLoopGroup.next())
             request.parameters = parameters
             request.headers.contentType = .json
+            struct EmptyContent: Content {}
             try? request.content.encode(EmptyContent())
             preProcessor(request)
             _ = try? route.responder.respond(to: request).wait()
@@ -134,7 +135,10 @@ public struct ExportOpenAPI: Command {
     }
 
     func ref(for type: Any.Type, object: SchemaObject, schemas: inout [String: SchemaObject]) -> OpenAPI.SchemaRef {
-        var name = extractName(from: type)
+        var name = String(reflecting: type)
+            .components(separatedBy: ".")
+            .dropFirst()
+            .joined(separator: ".")
 
         let isOptional = name.hasPrefix("Optional<")
         if isOptional {
@@ -228,67 +232,5 @@ public struct ExportOpenAPI: Command {
         try data.write(to: url)
 
         context.console.print("spec written to \(signature.path)")
-    }
-}
-
-private func extractName(from type: Any.Type) -> String {
-    String(reflecting: type)
-        .components(separatedBy: ".")
-        .dropFirst()
-        .joined(separator: ".")
-}
-
-private protocol RouteResult {
-    static var resultType: Any.Type { get }
-}
-
-extension EventLoopFuture: RouteResult {
-    static var resultType: Any.Type {
-        Value.self
-    }
-}
-
-private protocol HasContentType {
-    static var contentType: HTTPMediaType { get }
-}
-
-extension EventLoopFuture: HasContentType where Value: Content {
-    static var contentType: HTTPMediaType {
-        Value.defaultContentType
-    }
-}
-
-struct EmptyContent: Content {}
-
-class TestContentDecoder: ContentDecoder {
-
-    let schemaExamples: [SchemaExample]
-
-    init(_ schemaExamples: [SchemaExample]) {
-        self.schemaExamples = schemaExamples
-    }
-
-    var result: (TestDecoder, Any.Type)?
-
-    func decode<D>(_ decodable: D.Type, from body: ByteBuffer, headers: HTTPHeaders) throws -> D where D: Decodable {
-        result = (TestDecoder(schemaExamples), decodable)
-        return try decodable.init(from: result!.0)
-    }
-}
-
-class TestURLQueryDecoder: URLQueryDecoder {
-
-    let schemaExamples: [SchemaExample]
-
-    init(_ schemaExamples: [SchemaExample]) {
-        self.schemaExamples = schemaExamples
-    }
-
-    var decoders: [TestDecoder] = []
-
-    func decode<D>(_ decodable: D.Type, from url: URI) throws -> D where D: Decodable {
-        let decoder = TestDecoder(schemaExamples)
-        decoders.append(decoder)
-        return try decodable.init(from: decoder)
     }
 }
