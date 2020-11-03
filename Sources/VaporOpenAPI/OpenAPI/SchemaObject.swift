@@ -6,7 +6,7 @@
 
 import Foundation
 
-/// See also: https://swagger.io/specification/
+/// See also: https://swagger.io/specification/#schema-object
 public final class SchemaObject: Encodable {
     public enum ObjectType: String, Encodable {
         case object, array, integer, number, boolean, string
