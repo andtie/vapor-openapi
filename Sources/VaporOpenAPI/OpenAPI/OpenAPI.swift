@@ -158,6 +158,7 @@ public struct OpenAPI: Encodable {
 
     public struct Operation: Encodable {
         public var summary: String?
+        public var description: String?
         public var operationId: String
         public var tags: [String]?
         public var parameters: [Parameter]?
@@ -166,12 +167,15 @@ public struct OpenAPI: Encodable {
 
         public init(
             summary: String?,
+            description: String?,
             operationId: String,
             tags: [String]?,
             parameters: [Parameter]?,
             requestBody: RequestBody?,
             responses: [ResponseCode: Response]
         ) {
+            self.summary = summary
+            self.description = description
             self.operationId = operationId
             self.tags = tags
             self.parameters = parameters

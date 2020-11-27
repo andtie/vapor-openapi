@@ -75,7 +75,8 @@ public struct ExportCommand: Command {
         let (body, queries) = try exporter.parameters(for: route, of: app, schemas: &schemas)
         let operationId = route.path.map { "\($0)" } + [route.verb]
         return OpenAPI.Operation(
-            summary: route.userInfo["description"] as? String,
+            summary: nil,
+            description: route.userInfo["description"] as? String,
             operationId: operationId.joined(separator: "-"),
             tags: nil,
             parameters: route.apiParamaters + queries,
