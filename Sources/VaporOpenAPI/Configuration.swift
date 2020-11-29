@@ -18,7 +18,8 @@ public struct Configuration {
         contentConfiguration: .global,
         schemaExamples: [
             SchemaExample(example: UUID(), for: SchemaObject(type: .string)),
-            SchemaExample(example: Date(), for: SchemaObject(type: .string, format: .dateTime))
+            SchemaExample(example: Date(), for: SchemaObject(type: .string, format: .dateTime)),
+            SchemaExample(example: Data(), for: SchemaObject(type: .string, format: .byte))
         ]
     )
 
