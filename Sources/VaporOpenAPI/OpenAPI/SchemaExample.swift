@@ -35,16 +35,13 @@ public struct SchemaExample {
     }
 
     static func data<T: Codable>(example: T, configuration: Configuration, location: Location) -> Data? {
-        let contentConfig = configuration.contentConfiguration
         switch location {
         case .header, .body:
-            guard let encoder = try? contentConfig.requireEncoder(for: .json) else { return nil }
-            var headers = HTTPHeaders()
-            var byteBuffer = ByteBuffer()
-            try? encoder.encode(example, to: &byteBuffer, headers: &headers)
-            return byteBuffer.getData(at: byteBuffer.readerIndex, length: byteBuffer.readableBytes)
+            return configuration.encode(example: example)
         case .path:
-            guard let encoder = try? contentConfig.requireURLEncoder() else { return nil }
+            guard let encoder = try? configuration.contentConfiguration.requireURLEncoder() else {
+                return nil
+            }
             var uri = URI()
             try? encoder.encode(example, to: &uri)
             return uri.query.map { Data($0.utf8) }

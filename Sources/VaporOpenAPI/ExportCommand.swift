@@ -102,6 +102,17 @@ public struct ExportCommand: Command {
         _ = try codable.init(from: decoder)
         let ref = OpenAPI.SchemaRef(for: codable, object: decoder.schemaObject, schemas: &schemas)
 
+        if !(codable is HTTPResponseStatus.Type) {
+            let path = route.apiPath
+                .replacingOccurrences(of: "/", with: "_")
+                .appending(".json")
+                .trimmingCharacters(in: .init(charactersIn: "_"))
+            let url = URL(fileURLWithPath: "open-api-mocks/" + path)
+            try Faker(schemaObject: decoder.schemaObject, configuration: configuration)
+                .generateJSON()
+                .write(to: url)
+        }
+
         return .init(
             description: ref.name,
             headers: nil,

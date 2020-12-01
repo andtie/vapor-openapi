@@ -17,7 +17,7 @@ public struct Configuration {
         postProcessor: { _ in },
         contentConfiguration: .global,
         schemaExamples: [
-            SchemaExample(example: UUID(), for: SchemaObject(type: .string)),
+            SchemaExample(example: UUID(), for: SchemaObject(type: .string, format: .uuid)),
             SchemaExample(example: Date(), for: SchemaObject(type: .string, format: .dateTime)),
             SchemaExample(example: Data(), for: SchemaObject(type: .string, format: .byte))
         ]
@@ -31,5 +31,15 @@ public struct Configuration {
     public var urlLDecoder: URLQueryDecoder {
         (try? contentConfiguration.requireURLDecoder())
             ?? URLEncodedFormDecoder()
+    }
+
+    public func encode<T: Codable>(example: T) -> Data? {
+        guard let encoder = try? contentConfiguration.requireEncoder(for: .json) else {
+            return nil
+        }
+        var headers = HTTPHeaders()
+        var byteBuffer = ByteBuffer()
+        try? encoder.encode(example, to: &byteBuffer, headers: &headers)
+        return byteBuffer.getData(at: byteBuffer.readerIndex, length: byteBuffer.readableBytes)
     }
 }

@@ -22,6 +22,8 @@ public final class SchemaObject: Encodable {
         case date // As defined by full-date - RFC3339
         case dateTime = "date-time" // As defined by date-time - RFC3339
         case password // A hint to UIs to obscure input.
+        case email
+        case uuid
     }
 
     public var type: ObjectType
