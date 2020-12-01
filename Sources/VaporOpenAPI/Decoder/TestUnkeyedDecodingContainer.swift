@@ -133,12 +133,14 @@ class TestUnkeyedDecodingContainer: UnkeyedDecodingContainer {
     }
 
     func decode<T>(_ type: T.Type) throws -> T where T: Decodable {
-        for example in configuration.schemaExamples {
-            if let value = try? example.value(for: type, configuration: configuration, location: .body) {
-                schemaObject = example.schema
-                delegate?.update(schemaObject: &schemaObject)
-                currentIndex += 1
-                return value
+        if !isPrimitiveType(type) {
+            for example in configuration.schemaExamples {
+                if let value = try? example.value(for: type, configuration: configuration, location: .body) {
+                    schemaObject = example.schema
+                    delegate?.update(schemaObject: &schemaObject)
+                    currentIndex += 1
+                    return value
+                }
             }
         }
         let decoder = TestDecoder(configuration)
@@ -147,6 +149,41 @@ class TestUnkeyedDecodingContainer: UnkeyedDecodingContainer {
         delegate?.update(schemaObject: &schemaObject)
         currentIndex += 1
         return value
+    }
+
+    func isPrimitiveType<T>(_ type: T.Type) -> Bool {
+        switch type {
+        case is Bool.Type:
+            return true
+        case is String.Type:
+            return true
+        case is Double.Type:
+            return true
+        case is Float.Type:
+            return true
+        case is Int.Type:
+            return true
+        case is Int8.Type:
+            return true
+        case is Int16.Type:
+            return true
+        case is Int32.Type:
+            return true
+        case is Int64.Type:
+            return true
+        case is UInt.Type:
+            return true
+        case is UInt8.Type:
+            return true
+        case is UInt16.Type:
+            return true
+        case is UInt32.Type:
+            return true
+        case is UInt64.Type:
+            return true
+        default:
+            return false
+        }
     }
 
     func nestedContainer<NestedKey>(keyedBy type: NestedKey.Type) throws -> KeyedDecodingContainer<NestedKey> where NestedKey: CodingKey {
