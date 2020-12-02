@@ -8,7 +8,7 @@ import Vapor
 
 struct ParameterExporter {
 
-    var configuration: Configuration
+    let configuration: Configuration
 
     func parameters(for route: Route, of app: Application, schemas: inout [String: SchemaObject]) throws -> (OpenAPI.RequestBody?, [OpenAPI.Parameter]) {
 
