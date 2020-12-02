@@ -92,6 +92,13 @@ struct Faker {
                 if hints.contains("number") {
                     return String(UInt.random(using: &Self.rng))
                 }
+                if hints.contains("url") {
+                    if hints.contains("image") || hints.contains("picture") {
+                        return "https://picsum.photos/200"
+                    } else {
+                        return "https://google.com?query=\(Int.random(using: &Self.rng))"
+                    }
+                }
                 return "test-\(hints.joined(separator: "-"))"
             }
         }
