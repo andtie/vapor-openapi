@@ -20,8 +20,10 @@ struct Faker {
 
     func generateJSON() throws -> Data {
         let value = try generateJSON(hint: nil)
-        let dict = value as? [String: Any] ?? ["value": value]
-        return try JSONSerialization.data(withJSONObject: dict, options: .prettyPrinted)
+        return try JSONSerialization.data(
+            withJSONObject: value as? [String: Any] ?? ["value": value],
+            options: [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+        )
     }
 
     func generateJSON(hint: String?) throws -> Any {
