@@ -133,6 +133,12 @@ class TestKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainerProtocol
                 return value
             }
         }
+        if let dict = type as? AnyStringDict.Type {
+            let decoder = try dict.valueDecoder(for: configuration)
+            schemaObject.additionalProperties = decoder.schemaObject
+            delegate?.update(schemaObject: &schemaObject, for: key.stringValue, required: isRequired(key))
+            return [:] as! T
+        }
         let decoder = TestDecoder(configuration)
         defer {
             schemaObject = decoder.schemaObject
@@ -160,5 +166,17 @@ class TestKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainerProtocol
     func superDecoder(forKey key: Key) throws -> Decoder {
         assertionFailure("not implemented")
         return TestDecoder(configuration)
+    }
+}
+
+protocol AnyStringDict {
+    static func valueDecoder(for configuration: Configuration) throws -> TestDecoder
+}
+
+extension Dictionary: AnyStringDict where Key == String, Value: Decodable {
+    static func valueDecoder(for configuration: Configuration) throws -> TestDecoder {
+        let decoder = TestDecoder(configuration)
+        _ = try Value(from: decoder)
+        return decoder
     }
 }

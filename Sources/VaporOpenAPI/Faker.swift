@@ -14,7 +14,7 @@ struct Faker {
     static var arrayCount = 10
 
     enum FakerError: Error {
-        case propertiesEmpty
+        case noProperties
         case itemsEmpty
     }
 
@@ -27,14 +27,23 @@ struct Faker {
     func generateJSON(hint: String?) throws -> Any {
         switch schemaObject.type {
         case .object:
-            guard let properties = schemaObject.properties else {
-                throw FakerError.propertiesEmpty
+            if let properties = schemaObject.properties {
+                let mapped = try properties.map { key, value in
+                    try (key, Faker(schemaObject: value, configuration: configuration)
+                            .generateJSON(hint: key))
+                }
+                return Dictionary(mapped, uniquingKeysWith: { x, y in x })
+            } else if let valueType = schemaObject.additionalProperties {
+                let mapped = try (0..<Faker.arrayCount).map { index -> (String, Any) in
+                    let key = "\(hint ?? "")-\(index)"
+                    let value = try Faker(schemaObject: valueType, configuration: configuration)
+                        .generateJSON(hint: hint)
+                    return (key, value)
+                }
+                return Dictionary(mapped, uniquingKeysWith: { x, y in x })
+            } else {
+                throw FakerError.noProperties
             }
-            let mapped = try properties.map { key, value in
-                try (key, Faker(schemaObject: value, configuration: configuration)
-                        .generateJSON(hint: key))
-            }
-            return Dictionary(mapped, uniquingKeysWith: { x, y in x })
         case .array:
             guard let itemType = schemaObject.items else {
                 throw FakerError.itemsEmpty

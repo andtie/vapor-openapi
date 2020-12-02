@@ -29,9 +29,10 @@ public final class SchemaObject: Encodable {
     public var type: ObjectType
     public var format: Format?
     public var required: [String]?
-    public var items: SchemaObject?
+    public var items: SchemaObject? // for arrays
     public var properties: [String: SchemaObject]?
     public var description: String?
+    public var additionalProperties: SchemaObject? // for dictionaries
 
     public init() {
         type = .object
