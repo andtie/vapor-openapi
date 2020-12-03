@@ -49,7 +49,7 @@ struct OperationExporter {
                 .appending(".json")
                 .trimmingCharacters(in: .init(charactersIn: "_"))
             let url = URL(fileURLWithPath: "open-api-mocks/" + path)
-            try Faker(schemaObject: decoder.schemaObject, configuration: configuration)
+            try Faker(schemaObject: decoder.schemaObject, configuration: configuration, rng: .init())
                 .generateJSON()
                 .write(to: url)
         }
