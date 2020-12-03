@@ -15,7 +15,9 @@ let package = Package(
     targets: [
         .target(
             name: "VaporOpenAPI",
-            dependencies: [.product(name: "Vapor", package: "vapor")]
+            dependencies: [
+                .product(name: "Vapor", package: "vapor")
+            ]
         ),
         .testTarget(
             name: "vapor-openapiTests",

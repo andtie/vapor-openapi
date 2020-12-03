@@ -6,24 +6,24 @@
 
 import Foundation
 
-class Faker {
+public final class Faker {
     let schemaObject: SchemaObject
     let configuration: Configuration
     let arrayCount = 10
     var rng: IteratingRandomNumberGenerator
 
-    init(schemaObject: SchemaObject, configuration: Configuration, rng: IteratingRandomNumberGenerator) {
+    public init(schemaObject: SchemaObject, configuration: Configuration = .default, rng: IteratingRandomNumberGenerator = .init()) {
         self.schemaObject = schemaObject
         self.configuration = configuration
         self.rng = rng
     }
 
-    enum FakerError: Error {
+    public enum FakerError: Error {
         case noProperties
         case itemsEmpty
     }
 
-    func generateJSON() throws -> Data {
+    public func generateJSON() throws -> Data {
         let value = try generateJSON(hint: nil)
         let dict = value as? [String: Any] ?? ["value": value]
         #if os(Linux)
@@ -34,7 +34,7 @@ class Faker {
         return try JSONSerialization.data(withJSONObject: dict, options: options)
     }
 
-    func generateJSON(hint: String?) throws -> Any {
+    private func generateJSON(hint: String?) throws -> Any {
         switch schemaObject.type {
         case .object:
             if let properties = schemaObject.properties {
@@ -99,21 +99,21 @@ class Faker {
         }
     }
 
-    func string(with hints: [String]) -> Any {
+    private func string(with hints: [String]) -> Any {
         if hints.contains("id") || hints.contains("identifier") || hints.contains("identification") {
             return String(rng.nextValue())
         }
         if hints.contains("name") {
             let name: String
             if hints.contains("first") || hints.contains("given") {
-                name = elements(from: Self.firstNames, maxCount: 2).joined(separator: " ")
+                name = elements(from: firstNames, maxCount: 2).joined(separator: " ")
             } else if hints.contains("last") {
-                name = elements(from: Self.lastNames, maxCount: 2).joined(separator: "-")
+                name = elements(from: lastNames, maxCount: 2).joined(separator: "-")
             } else if hints.contains("full") {
-                name = elements(from: Self.firstNames, maxCount: 1).joined(separator: " ")
-                    + elements(from: Self.lastNames, maxCount: 2).joined(separator: "-")
+                name = elements(from: firstNames, maxCount: 1).joined(separator: " ")
+                    + elements(from: lastNames, maxCount: 2).joined(separator: "-")
             } else {
-                name = elements(from: Self.genericNames, maxCount: 2).joined(separator: " ")
+                name = elements(from: genericNames, maxCount: 2).joined(separator: " ")
             }
             return name
         }
@@ -133,53 +133,13 @@ class Faker {
         return "test-\(hints.joined(separator: "-"))"
     }
 
-    static let firstNames = ["Frank", "Walter", "Maria", "Heribert", "Gustav", "Joe", "Danielle", "Lisa"]
-    static let lastNames = ["Miller", "Doe", "Simpson", "Smith", "McDonald", "Singh", "Erikson", "López"]
-    static let genericNames = ["Boulet", "Fulgor", "Quemas", "Prende", "Mojado", "Gass", "Brise", "Fumant"]
+    private let firstNames = ["Frank", "Walter", "Maria", "Heribert", "Gustav", "Joe", "Danielle", "Lisa"]
+    private let lastNames = ["Miller", "Doe", "Simpson", "Smith", "McDonald", "Singh", "Erikson", "López"]
+    private let genericNames = ["Boulet", "Fulgor", "Quemas", "Prende", "Mojado", "Gass", "Brise", "Fumant"]
 
-    func elements(from strings: [String], maxCount: UInt) -> [String] {
+    private func elements(from strings: [String], maxCount: UInt) -> [String] {
         let length = UInt.random(in: 1...max(maxCount, 1), using: &rng)
         return (1...length)
             .compactMap { _ in strings.randomElement(using: &rng) }
-    }
-}
-
-extension String {
-    func componentsSeparatedByCamelCase() -> [String] {
-        camelCaseToSnakeCase().components(separatedBy: "_")
-    }
-
-    fileprivate func camelCaseToSnakeCase() -> String {
-        let acronymPattern = "([A-Z]+)([A-Z][a-z]|[0-9])"
-        let normalPattern = "([a-z0-9])([A-Z])"
-        return processCamelCaseRegex(pattern: acronymPattern)?
-            .processCamelCaseRegex(pattern: normalPattern)?.lowercased() ?? lowercased()
-    }
-
-    fileprivate func processCamelCaseRegex(pattern: String) -> String? {
-        let regex = try? NSRegularExpression(pattern: pattern, options: [])
-        let range = NSRange(location: 0, length: count)
-        return regex?.stringByReplacingMatches(in: self, options: [], range: range, withTemplate: "$1_$2")
-    }
-}
-
-public class IteratingRandomNumberGenerator: RandomNumberGenerator {
-    var value: UInt64 = 0
-
-    public func nextValue() -> UInt64 {
-        defer { value += 1 }
-        return value
-    }
-
-    public func next() -> UInt64 {
-        deterministicHash(nextValue())
-    }
-
-    /// in constrast to `hashValue`, this function is consistent over several runs
-    func deterministicHash(_ value: UInt64) -> UInt64 {
-        var x = value
-        x = (x ^ (x >> 30)) &* 0xbf58476d1ce4e5b9
-        x = (x ^ (x >> 27)) &* 0x94d049bb133111eb
-        return x ^ (x >> 31)
     }
 }
