@@ -25,13 +25,12 @@ public final class Faker {
 
     public func generateJSON() throws -> Data {
         let value = try generateJSON(hint: nil)
-        let dict = value as? [String: Any] ?? ["value": value]
         #if os(Linux)
             let options: JSONSerialization.WritingOptions = [.prettyPrinted, .sortedKeys]
         #else
             let options: JSONSerialization.WritingOptions = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
         #endif
-        return try JSONSerialization.data(withJSONObject: dict, options: options)
+        return try JSONSerialization.data(withJSONObject: value, options: options)
     }
 
     private func generateJSON(hint: String?) throws -> Any {
@@ -65,11 +64,11 @@ public final class Faker {
         case .integer:
             switch schemaObject.format {
             case .int32:
-                return UInt32.random(using: &rng)
+                return abs(Int32.random(using: &rng))
             case .int64:
-                return UInt64.random(using: &rng)
+                return abs(Int64.random(using: &rng))
             default:
-                return UInt.random(using: &rng)
+                return abs(Int.random(using: &rng))
             }
         case .number:
             switch schemaObject.format {
