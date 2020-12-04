@@ -7,7 +7,7 @@
 import Foundation
 
 public class IteratingRandomNumberGenerator: RandomNumberGenerator {
-    var value: UInt64 = 0
+    var value: UInt64 = 1
 
     public init() {}
 

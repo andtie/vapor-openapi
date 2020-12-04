@@ -37,6 +37,7 @@ public final class Faker {
         if let values = schemaObject.enum, let first = values.first {
             return (values.randomElement(using: &rng) ?? first).value
         }
+        let hints = hint?.componentsSeparatedByCamelCase() ?? []
         switch schemaObject.type {
         case .object:
             if let properties = schemaObject.properties {
@@ -65,6 +66,9 @@ public final class Faker {
                     .generateJSON(hint: (hint ?? "") + "_\(index)")
             }
         case .integer:
+            if hints.contains("count") {
+                return Int.random(in: 0...100, using: &rng)
+            }
             switch schemaObject.format {
             case .int32:
                 return abs(Int32.random(using: &rng))
@@ -96,7 +100,7 @@ public final class Faker {
             case .uuid:
                 return String(format: "00000000-0000-0000-0000-%012d", rng.nextValue())
             default:
-                return string(with: hint?.componentsSeparatedByCamelCase() ?? [])
+                return string(with: hints)
             }
         }
     }
@@ -132,6 +136,10 @@ public final class Faker {
                 return "https://google.com?query=\(Int.random(using: &rng))"
             }
         }
+        if hints.contains("picture") {
+            return "https://picsum.photos/200"
+        }
+        // Others: "city", "street", "address"
         return "test-\(hints.joined(separator: "-"))"
     }
 
