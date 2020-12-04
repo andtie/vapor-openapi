@@ -133,7 +133,7 @@ class TestUnkeyedDecodingContainer: UnkeyedDecodingContainer {
     }
 
     func decode<T>(_ type: T.Type) throws -> T where T: Decodable {
-        if !isPrimitiveType(type) {
+        if !(type.self is PrimitiveJSONType.Type) {
             for example in configuration.schemaExamples {
                 if let value = try? example.value(for: type, configuration: configuration, location: .body) {
                     schemaObject = example.schema
@@ -142,6 +142,12 @@ class TestUnkeyedDecodingContainer: UnkeyedDecodingContainer {
                     return value
                 }
             }
+            if let inferrable = T.self as? Inferrable.Type ?? Container<T>.self as? Inferrable.Type {
+                schemaObject = try inferrable.inferSchema(with: configuration)
+                delegate?.update(schemaObject: &schemaObject)
+                currentIndex += 1
+                return try inferrable.inferValue(with: configuration) as! T
+            }
         }
         let decoder = TestDecoder(configuration)
         let value = try T(from: decoder)
@@ -149,41 +155,6 @@ class TestUnkeyedDecodingContainer: UnkeyedDecodingContainer {
         delegate?.update(schemaObject: &schemaObject)
         currentIndex += 1
         return value
-    }
-
-    func isPrimitiveType<T>(_ type: T.Type) -> Bool {
-        switch type {
-        case is Bool.Type:
-            return true
-        case is String.Type:
-            return true
-        case is Double.Type:
-            return true
-        case is Float.Type:
-            return true
-        case is Int.Type:
-            return true
-        case is Int8.Type:
-            return true
-        case is Int16.Type:
-            return true
-        case is Int32.Type:
-            return true
-        case is Int64.Type:
-            return true
-        case is UInt.Type:
-            return true
-        case is UInt8.Type:
-            return true
-        case is UInt16.Type:
-            return true
-        case is UInt32.Type:
-            return true
-        case is UInt64.Type:
-            return true
-        default:
-            return false
-        }
     }
 
     func nestedContainer<NestedKey>(keyedBy type: NestedKey.Type) throws -> KeyedDecodingContainer<NestedKey> where NestedKey: CodingKey {

@@ -33,6 +33,7 @@ public final class SchemaObject: Encodable {
     public var properties: [String: SchemaObject]?
     public var description: String?
     public var additionalProperties: SchemaObject? // for dictionaries
+    public var `enum`: [AnyPrimitiveJSONType]?
 
     public init() {
         type = .object

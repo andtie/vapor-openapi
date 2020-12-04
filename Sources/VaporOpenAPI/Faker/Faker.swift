@@ -34,6 +34,9 @@ public final class Faker {
     }
 
     private func generateJSON(hint: String?) throws -> Any {
+        if let values = schemaObject.enum, let first = values.first {
+            return (values.randomElement(using: &rng) ?? first).value
+        }
         switch schemaObject.type {
         case .object:
             if let properties = schemaObject.properties {
