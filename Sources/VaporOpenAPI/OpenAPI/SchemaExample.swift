@@ -20,7 +20,7 @@ public struct SchemaExample {
 
     public init<T: Codable>(example: T, for schema: SchemaObject) {
         self.schema = schema
-        self.allowOptional = example is AnyOptional
+        self.allowOptional = example is ExpressibleByNilLiteral
         self.data = { Self.data(example: example, configuration: $0, location: $1) }
     }
 
@@ -52,12 +52,9 @@ public struct SchemaExample {
         guard let data = self.data(configuration, location)
         else { throw SchemaExampleError.couldNotCreateData }
         let value = try configuration.bodyDecoder.decode(T.self, from: .init(data: data), headers: .init())
-        if !allowOptional && value is AnyOptional {
+        if !allowOptional && value is ExpressibleByNilLiteral {
             throw SchemaExampleError.couldNotCreateData
         }
         return value
     }
 }
-
-protocol AnyOptional {}
-extension Optional: AnyOptional {}
