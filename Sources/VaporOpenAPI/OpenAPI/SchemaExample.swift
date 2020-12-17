@@ -34,7 +34,7 @@ public struct SchemaExample {
         case couldNotCreateData
     }
 
-    static func data<T: Codable>(example: T, configuration: Configuration, location: Location) -> Data? {
+    private static func data<T: Codable>(example: T, configuration: Configuration, location: Location) -> Data? {
         switch location {
         case .header, .body:
             return configuration.encode(example: example)

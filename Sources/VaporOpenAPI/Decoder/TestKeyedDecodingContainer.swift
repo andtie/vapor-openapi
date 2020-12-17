@@ -6,7 +6,7 @@
 
 import Foundation
 
-class TestKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainerProtocol, SchemaObjectDelegate {
+class TestKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainerProtocol {
 
     let configuration: Configuration
 
@@ -17,7 +17,6 @@ class TestKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainerProtocol
     var codingPath: [CodingKey] = []
 
     var optionalKeys: Set<String> = []
-    var isSingleValueOptional: Bool = false
     var schemaObject = SchemaObject()
     weak var delegate: SchemaObjectDelegate?
 
