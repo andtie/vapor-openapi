@@ -142,16 +142,45 @@ class TestUnkeyedDecodingContainer: UnkeyedDecodingContainer {
                     return value
                 }
             }
-            if let inferrable = T.self as? Inferrable.Type ?? Container<T>.self as? Inferrable.Type {
-                schemaObject = try inferrable.inferSchema(with: configuration)
+            let schemaProperties = SchemaProperties(type: type)
+            if let schema = delegate?.schemas.value[schemaProperties.name], let value = delegate?.values[schemaProperties.name] as? T {
+                schemaObject = schema
                 delegate?.update(schemaObject: &schemaObject)
                 currentIndex += 1
-                return try inferrable.inferValue(with: configuration) as! T
+                return value
             }
+            if let inferrable = T.self as? Inferrable.Type ?? Container<T>.self as? Inferrable.Type {
+                schemaObject = try inferrable.inferSchema(with: configuration, delegate: delegate)
+                delegate?.update(schemaObject: &schemaObject)
+                currentIndex += 1
+                return try inferrable.inferValue(with: configuration, delegate: delegate) as! T
+            }
+            if delegate?.objectStack.contains(where: { $0 == type }) == true {
+                schemaObject = schemaProperties.schemaObject()
+                delegate?.update(schemaObject: &schemaObject)
+                currentIndex += 1
+                throw TestDecoder.DecoderError.recursion(schemaProperties)
+            }
+            delegate?.objectStack.append(type)
         }
-        let decoder = TestDecoder(configuration)
-        let value = try T(from: decoder)
+        let decoder = TestDecoder(configuration, delegate: delegate)
+        let value: T
+        do {
+            value = try T(from: decoder)
+        } catch TestDecoder.DecoderError.recursion(let props) {
+            if schemaObject.type == .object {
+                delegate?.schemas.value[props.name] = decoder.schemaObject
+            }
+            throw TestDecoder.DecoderError.recursion(props)
+        } catch {
+            throw error
+        }
         schemaObject = decoder.schemaObject
+        if schemaObject.type == .object {
+            let name = SchemaProperties(type: type).name
+            delegate?.schemas.value[name] = schemaObject
+            delegate?.values[name] = value
+        }
         delegate?.update(schemaObject: &schemaObject)
         currentIndex += 1
         return value
@@ -169,6 +198,6 @@ class TestUnkeyedDecodingContainer: UnkeyedDecodingContainer {
 
     func superDecoder() throws -> Decoder {
         assertionFailure("not implemented")
-        return TestDecoder(configuration)
+        return TestDecoder(configuration, delegate: delegate)
     }
 }

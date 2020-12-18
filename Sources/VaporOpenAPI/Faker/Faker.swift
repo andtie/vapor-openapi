@@ -8,19 +8,25 @@ import Foundation
 
 public final class Faker {
     let schemaObject: SchemaObject
+    let schemas: [String: SchemaObject]
     let configuration: Configuration
-    let arrayCount = 10
+    let arrayCount = 4
+    let maxDepth = 7
     var rng: IteratingRandomNumberGenerator
+    let depth: Int
 
-    public init(schemaObject: SchemaObject, configuration: Configuration = .default, rng: IteratingRandomNumberGenerator = .init()) {
+    public init(schemaObject: SchemaObject, schemas: [String: SchemaObject], configuration: Configuration = .default, rng: IteratingRandomNumberGenerator = .init(), depth: Int = 0) {
         self.schemaObject = schemaObject
+        self.schemas = schemas
         self.configuration = configuration
         self.rng = rng
+        self.depth = depth
     }
 
     public enum FakerError: Error {
         case noProperties
         case itemsEmpty
+        case noRef
     }
 
     public func generateJSON() throws -> Data {
@@ -41,15 +47,18 @@ public final class Faker {
         switch schemaObject.type {
         case .object:
             if let properties = schemaObject.properties {
-                let mapped = try properties.sorted(by: { $0.0 < $1.0 }).map { key, value in
-                    try (key, Faker(schemaObject: value, configuration: configuration, rng: rng)
+                let dict = depth >= maxDepth
+                    ? properties.filter { schemaObject.required?.contains($0.key) == true }
+                    : properties
+                let mapped = try dict.sorted(by: { $0.0 < $1.0 }).map { key, value in
+                    try (key, Faker(schemaObject: value, schemas: schemas, configuration: configuration, rng: rng, depth: depth + 1)
                             .generateJSON(hint: key))
                 }
                 return Dictionary(mapped, uniquingKeysWith: { x, y in x })
             } else if let valueType = schemaObject.additionalProperties {
                 let mapped = try (0..<arrayCount).map { index -> (String, Any) in
                     let key = "\(hint ?? "")-\(index)"
-                    let value = try Faker(schemaObject: valueType, configuration: configuration, rng: rng)
+                    let value = try Faker(schemaObject: valueType, schemas: schemas, configuration: configuration, rng: rng, depth: depth + 1)
                         .generateJSON(hint: hint)
                     return (key, value)
                 }
@@ -61,8 +70,11 @@ public final class Faker {
             guard let itemType = schemaObject.items else {
                 throw FakerError.itemsEmpty
             }
+            if depth >= maxDepth {
+                return []
+            }
             return try (0..<arrayCount).map { index in
-                try Faker(schemaObject: itemType, configuration: configuration, rng: rng)
+                try Faker(schemaObject: itemType, schemas: schemas, configuration: configuration, rng: rng, depth: depth + 1)
                     .generateJSON(hint: (hint ?? "") + "_\(index)")
             }
         case .integer:
@@ -102,6 +114,14 @@ public final class Faker {
             default:
                 return string(with: hints)
             }
+        case nil:
+            guard
+                let ref = schemaObject.ref,
+                let name = ref.split(separator: "/").last,
+                let object = schemas[String(name)]
+            else { throw FakerError.noRef }
+            return try Faker(schemaObject: object, schemas: schemas, configuration: configuration, rng: rng, depth: depth)
+                .generateJSON(hint: hint)
         }
     }
 

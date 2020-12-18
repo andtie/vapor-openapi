@@ -84,40 +84,11 @@ public struct OpenAPI: Encodable {
         }
     }
 
-    public struct SchemaRef: Encodable {
-        public var name: String
-        public var isOptional: Bool
-        public var isArray: Bool
-
-        public init(name: String, isOptional: Bool, isArray: Bool) {
-            self.name = name
-            self.isOptional = isOptional
-            self.isArray = isArray
-        }
-
-        enum CodingKeys: String, CodingKey {
-            case ref = "$ref"
-            case type
-            case items
-        }
-
-        public func encode(to encoder: Encoder) throws {
-            var container = encoder.container(keyedBy: CodingKeys.self)
-            if isArray {
-                try container.encode("array", forKey: .type)
-                var nestedContainer = container.nestedContainer(keyedBy: CodingKeys.self, forKey: .items)
-                try nestedContainer.encode("#/components/schemas/\(name)", forKey: .ref)
-            } else {
-                try container.encode("#/components/schemas/\(name)", forKey: .ref)
-            }
-        }
-    }
-
     public struct ResponseContent: Encodable {
         public var description: String?
-        public var schema: SchemaRef
+        public var schema: SchemaObject
 
-        public init(description: String?, schema: SchemaRef) {
+        public init(description: String?, schema: SchemaObject) {
             self.description = description
             self.schema = schema
         }
@@ -150,8 +121,8 @@ public struct OpenAPI: Encodable {
     }
 
     public struct RequestContent: Encodable {
-        public var schema: SchemaRef
-        public init(schema: SchemaRef) {
+        public var schema: SchemaObject
+        public init(schema: SchemaObject) {
             self.schema = schema
         }
     }

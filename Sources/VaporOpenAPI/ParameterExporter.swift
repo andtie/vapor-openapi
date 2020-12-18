@@ -12,11 +12,11 @@ struct ParameterExporter {
 
     func parameters(for route: Route, of app: Application, schemas: inout [String: SchemaObject]) throws -> (OpenAPI.RequestBody?, [OpenAPI.Parameter]) {
 
-        let bodyDecoder = TestContentDecoder(configuration)
+        let bodyDecoder = TestContentDecoder(configuration, delegate: nil)
         ContentConfiguration.global.use(decoder: bodyDecoder, for: .json)
         defer { ContentConfiguration.global.use(decoder: configuration.bodyDecoder, for: .json) }
 
-        let queryDecoder = TestURLQueryDecoder(configuration)
+        let queryDecoder = TestURLQueryDecoder(configuration, delegate: nil)
         ContentConfiguration.global.use(urlDecoder: queryDecoder)
         defer { ContentConfiguration.global.use(urlDecoder: configuration.urlLDecoder) }
 
@@ -38,13 +38,14 @@ struct ParameterExporter {
         }
 
         let body: OpenAPI.RequestBody? = bodyDecoder.result.map { decoder, decodable in
-            let ref = OpenAPI.SchemaRef(for: decodable, object: decoder.schemaObject, schemas: &schemas)
+            let properties = SchemaProperties(type: decodable)
+            schemas[properties.name] = properties.isArray ? decoder.schemaObject.items : decoder.schemaObject
             return OpenAPI.RequestBody(
                 description: nil,
                 content: [
-                    "application/json": .init(schema: ref)
+                    "application/json": .init(schema: properties.schemaObject())
                 ],
-                required: !ref.isOptional
+                required: !properties.isOptional
             )
         }
 

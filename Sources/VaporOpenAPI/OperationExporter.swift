@@ -39,9 +39,19 @@ struct OperationExporter {
             throw ExportError.text("Unexpected Result Type \(route.responseType)")
         }
 
-        let decoder = TestDecoder(configuration)
-        _ = try codable.init(from: decoder)
-        let ref = OpenAPI.SchemaRef(for: codable, object: decoder.schemaObject, schemas: &schemas)
+        let decoder = TestDecoder(configuration, delegate: nil)
+        do {
+            _ = try codable.init(from: decoder)
+        } catch TestDecoder.DecoderError.recursion {
+            // noop
+        } catch {
+            throw error
+        }
+        let properties = SchemaProperties(type: codable)
+        schemas[properties.name] = properties.isArray ? decoder.schemaObject.items : decoder.schemaObject
+        for (key, value) in decoder.schemas.value {
+            schemas[key] = value
+        }
 
         if !(codable is HTTPResponseStatus.Type) {
             let path = route.apiPath
@@ -50,16 +60,16 @@ struct OperationExporter {
                 .trimmingCharacters(in: .init(charactersIn: "_"))
             let name = route.method.string.lowercased() + "_" + path
             let url = URL(fileURLWithPath: "open-api-mocks/" + name)
-            try Faker(schemaObject: decoder.schemaObject, configuration: configuration, rng: .init())
+            try Faker(schemaObject: decoder.schemaObject, schemas: schemas, configuration: configuration, rng: .init())
                 .generateJSON()
                 .write(to: url)
         }
 
         return .init(
-            description: ref.name,
+            description: properties.name,
             headers: nil,
             content: [
-                "application/json": .init(description: nil, schema: ref)
+                "application/json": .init(description: nil, schema: properties.schemaObject())
             ]
         )
     }

@@ -8,9 +8,9 @@ import Vapor
 
 extension Faker {
     public static func content<C: Content>(configuration: Configuration = .default) throws -> C {
-        let decoder = TestDecoder(configuration)
+        let decoder = TestDecoder(configuration, delegate: nil)
         _ = try C.init(from: decoder)
-        let faker = Faker(schemaObject: decoder.schemaObject, configuration: configuration)
+        let faker = Faker(schemaObject: decoder.schemaObject, schemas: decoder.schemas.value, configuration: configuration)
         let data = try faker.generateJSON()
         return try configuration.bodyDecoder.decode(C.self, from: .init(data: data), headers: .init())
     }

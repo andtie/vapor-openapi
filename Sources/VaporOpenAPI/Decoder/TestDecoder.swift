@@ -9,9 +9,19 @@ import Foundation
 class TestDecoder: Decoder, SchemaObjectDelegate {
 
     let configuration: Configuration
+    var objectStack: [Any.Type]
+    var schemas: Ref<[String: SchemaObject]>
+    var values: [String: Any]
 
-    init(_ configuration: Configuration) {
+    init(_ configuration: Configuration, delegate: SchemaObjectDelegate?) {
         self.configuration = configuration
+        self.objectStack = delegate?.objectStack ?? []
+        self.schemas = delegate?.schemas ?? .init([:])
+        self.values = delegate?.values ?? [:]
+    }
+
+    enum DecoderError: Error {
+        case recursion(SchemaProperties)
     }
 
     var codingPath: [CodingKey] = []

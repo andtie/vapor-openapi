@@ -9,6 +9,17 @@ import Foundation
 protocol SchemaObjectDelegate: AnyObject {
     var schemaObject: SchemaObject { get set }
     var isSingleValueOptional: Bool { get set }
+    var objectStack: [Any.Type] { get set }
+    var schemas: Ref<[String: SchemaObject]> { get }
+    var values: [String: Any] { get set }
+}
+
+class Ref<T> {
+    var value: T
+
+    init(_ value: T) {
+        self.value = value
+    }
 }
 
 extension SchemaObjectDelegate {

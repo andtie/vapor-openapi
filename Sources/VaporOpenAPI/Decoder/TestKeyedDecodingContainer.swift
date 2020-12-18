@@ -132,18 +132,51 @@ class TestKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainerProtocol
                 return value
             }
         }
-        if let inferrable = T.self as? Inferrable.Type ?? Container<T>.self as? Inferrable.Type {
-            schemaObject = try inferrable.inferSchema(with: configuration)
+        let schemaProperties = SchemaProperties(type: type)
+        if let schema = delegate?.schemas.value[schemaProperties.name], let value = delegate?.values[schemaProperties.name] as? T {
+            schemaObject = schema
             delegate?.update(schemaObject: &schemaObject, for: key.stringValue, required: isRequired(key))
-            return try inferrable.inferValue(with: configuration) as! T
+            return value
         }
-        let decoder = TestDecoder(configuration)
-        defer {
-            schemaObject = decoder.schemaObject
-            let required = isRequired(key) && !decoder.isSingleValueOptional
-            delegate?.update(schemaObject: &schemaObject, for: key.stringValue, required: required)
+        if let inferrable = T.self as? Inferrable.Type ?? Container<T>.self as? Inferrable.Type {
+            schemaObject = try inferrable.inferSchema(with: configuration, delegate: delegate)
+            delegate?.update(schemaObject: &schemaObject, for: key.stringValue, required: isRequired(key))
+            return try inferrable.inferValue(with: configuration, delegate: delegate) as! T
         }
-        return try T(from: decoder)
+        if !(type.self is PrimitiveJSONType.Type) {
+            if delegate?.objectStack.contains(where: { $0 == type }) == true {
+                schemaObject = schemaProperties.schemaObject()
+                delegate?.update(schemaObject: &schemaObject, for: key.stringValue, required: isRequired(key))
+                throw TestDecoder.DecoderError.recursion(schemaProperties)
+            }
+            delegate?.objectStack.append(type)
+        }
+        let decoder = TestDecoder(configuration, delegate: delegate)
+        let value: T
+        do {
+            value = try T(from: decoder)
+        } catch TestDecoder.DecoderError.recursion(let ref) {
+            if let optional = type as? ExpressibleByNilLiteral.Type {
+                value = optional.init(nilLiteral: ()) as! T
+            } else if let v = [] as? T {
+                decoder.schemaObject.items = ref.schemaObject()
+                value = v
+            } else {
+                schemaObject = SchemaProperties(type: type).schemaObject()
+                delegate?.update(schemaObject: &schemaObject, for: key.stringValue, required: isRequired(key))
+                throw TestDecoder.DecoderError.recursion(ref)
+            }
+        } catch {
+            throw error
+        }
+        schemaObject = decoder.schemaObject
+        let required = isRequired(key) && !decoder.isSingleValueOptional
+        if schemaObject.type == .object {
+            delegate?.schemas.value[schemaProperties.name] = schemaObject
+            delegate?.values[schemaProperties.name] = value
+        }
+        delegate?.update(schemaObject: &schemaObject, for: key.stringValue, required: required)
+        return value
     }
 
     func nestedContainer<NestedKey>(keyedBy type: NestedKey.Type, forKey key: Key) throws -> KeyedDecodingContainer<NestedKey> where NestedKey: CodingKey {
@@ -158,11 +191,11 @@ class TestKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainerProtocol
 
     func superDecoder() throws -> Decoder {
         assertionFailure("not implemented")
-        return TestDecoder(configuration)
+        return TestDecoder(configuration, delegate: delegate)
     }
 
     func superDecoder(forKey key: Key) throws -> Decoder {
         assertionFailure("not implemented")
-        return TestDecoder(configuration)
+        return TestDecoder(configuration, delegate: delegate)
     }
 }
