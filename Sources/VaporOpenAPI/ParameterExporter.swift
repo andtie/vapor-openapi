@@ -14,17 +14,21 @@ struct ParameterExporter {
 
     func parameters(for route: Route, of app: Application, schemas: inout [String: SchemaObject]) throws -> (OpenAPI.RequestBody?, [OpenAPI.Parameter]) {
 
+        ContentConfiguration.saved = ContentConfiguration.global
+        defer {
+            if let saved = ContentConfiguration.saved {
+                ContentConfiguration.global = saved
+                ContentConfiguration.saved = nil
+            }
+        }
+
         let config = configuration.coderConfig
 
-        let previousBodyDecoder = try ContentConfiguration.global.requireDecoder(for: .json)
         let bodyDecoder = TestContentDecoder(config, delegate: nil)
         ContentConfiguration.global.use(decoder: bodyDecoder, for: .json)
-        defer { ContentConfiguration.global.use(decoder: previousBodyDecoder, for: .json) }
 
-        let previousURLDecoder = try ContentConfiguration.global.requireURLDecoder()
         let queryDecoder = TestURLQueryDecoder(config, delegate: nil)
         ContentConfiguration.global.use(urlDecoder: queryDecoder)
-        defer { ContentConfiguration.global.use(urlDecoder: previousURLDecoder) }
 
         for example in config.schemaExamples {
             var parameters = Parameters()

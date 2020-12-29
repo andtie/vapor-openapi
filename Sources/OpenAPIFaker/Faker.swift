@@ -87,7 +87,7 @@ public final class Faker {
             case .int32:
                 return Int32.random(in: 0...Int32.max, using: &rng)
             case .int64:
-                return Int64.random(in:  0...Int64.max, using: &rng)
+                return Int64.random(in: 0...Int64.max, using: &rng)
             default:
                 return Int.random(in: 0...Int.max, using: &rng)
             }

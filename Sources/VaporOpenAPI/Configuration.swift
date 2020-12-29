@@ -44,4 +44,10 @@ extension ContentConfiguration: APICoderProtocol {
         let decoder = try requireDecoder(for: .json)
         return try decoder.decode(T.self, from: .init(data: data), headers: .init())
     }
+
+    public static var saved: ContentConfiguration?
+
+    public static var current: ContentConfiguration {
+        .saved ?? .global
+    }
 }
