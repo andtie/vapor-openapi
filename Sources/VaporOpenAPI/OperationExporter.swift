@@ -4,10 +4,10 @@
 // Created by Andreas in 2020
 //
 
-import Vapor
-import OpenAPIDecoder
 import OpenAPI
+import OpenAPIDecoder
 import OpenAPIFaker
+import Vapor
 
 struct OperationExporter {
 

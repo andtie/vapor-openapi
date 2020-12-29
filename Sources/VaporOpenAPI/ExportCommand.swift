@@ -4,9 +4,9 @@
 // Created by Andreas in 2020
 //
 
-import Vapor
-import OpenAPIDecoder
 import OpenAPI
+import OpenAPIDecoder
+import Vapor
 
 public struct ExportCommand: Command {
 

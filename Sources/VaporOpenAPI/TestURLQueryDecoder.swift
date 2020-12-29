@@ -4,9 +4,9 @@
 // Created by Andreas in 2020
 //
 
-import Vapor
 import OpenAPI
 import OpenAPIDecoder
+import Vapor
 
 public class TestURLQueryDecoder: URLQueryDecoder {
 

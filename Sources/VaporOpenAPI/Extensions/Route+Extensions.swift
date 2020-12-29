@@ -4,8 +4,8 @@
 // Created by Andreas in 2020
 //
 
-import Vapor
 import OpenAPI
+import Vapor
 
 extension Route {
 

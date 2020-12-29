@@ -4,8 +4,8 @@
 // Created by Andreas in 2020
 //
 
-import Vapor
 import OpenAPIDecoder
+import Vapor
 
 public class TestContentDecoder: ContentDecoder {
 
