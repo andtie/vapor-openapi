@@ -6,14 +6,16 @@
 
 import Vapor
 import OpenAPI
+import OpenAPIDecoder
 
 public class TestURLQueryDecoder: URLQueryDecoder {
 
-    let configuration: Configuration
+    let configuration: CoderConfig
     weak var delegate: SchemaObjectDelegate?
 
-    public init(_ configuration: Configuration, delegate: SchemaObjectDelegate?) {
+    public init(_ configuration: CoderConfig, delegate: SchemaObjectDelegate?) {
         self.configuration = configuration
+        self.delegate = delegate
     }
 
     public var decoders: [TestDecoder] = []

@@ -8,14 +8,14 @@ import Foundation
 import OpenAPI
 
 protocol Inferrable {
-    static func inferSchema(with configuration: Configuration, delegate: SchemaObjectDelegate?) throws -> SchemaObject
-    static func inferValue(with configuration: Configuration, delegate: SchemaObjectDelegate?) throws -> Any
+    static func inferSchema(with configuration: CoderConfig, delegate: SchemaObjectDelegate?) throws -> SchemaObject
+    static func inferValue(with configuration: CoderConfig, delegate: SchemaObjectDelegate?) throws -> Any
 }
 
 struct Container<V: Decodable> {}
 
 extension Container: Inferrable where V: CaseIterable, V: RawRepresentable, V.RawValue: PrimitiveJSONType {
-    static func inferSchema(with configuration: Configuration, delegate: SchemaObjectDelegate?) throws -> SchemaObject {
+    static func inferSchema(with configuration: CoderConfig, delegate: SchemaObjectDelegate?) throws -> SchemaObject {
         let decoder = TestDecoder(configuration, delegate: delegate)
         _ = try V.RawValue(from: decoder)
         let schemaObject = decoder.schemaObject
@@ -23,14 +23,14 @@ extension Container: Inferrable where V: CaseIterable, V: RawRepresentable, V.Ra
         return schemaObject
     }
 
-    static func inferValue(with configuration: Configuration, delegate: SchemaObjectDelegate?) throws -> Any {
+    static func inferValue(with configuration: CoderConfig, delegate: SchemaObjectDelegate?) throws -> Any {
         guard let value = V.allCases.first else { fatalError("`Never` use this API ;-)") }
         return value
     }
 }
 
 extension Dictionary: Inferrable where Key == String, Value: Decodable {
-    static func inferSchema(with configuration: Configuration, delegate: SchemaObjectDelegate?) throws -> SchemaObject {
+    static func inferSchema(with configuration: CoderConfig, delegate: SchemaObjectDelegate?) throws -> SchemaObject {
         let decoder = TestDecoder(configuration, delegate: delegate)
         _ = try Value(from: decoder)
         let schemaObject = SchemaObject()
@@ -38,7 +38,7 @@ extension Dictionary: Inferrable where Key == String, Value: Decodable {
         return schemaObject
     }
 
-    static func inferValue(with configuration: Configuration, delegate: SchemaObjectDelegate?) throws -> Any {
+    static func inferValue(with configuration: CoderConfig, delegate: SchemaObjectDelegate?) throws -> Any {
         [:]
     }
 }

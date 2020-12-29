@@ -11,13 +11,13 @@ import OpenAPIDecoder
 public final class Faker {
     let schemaObject: SchemaObject
     let schemas: [String: SchemaObject]
-    let configuration: Configuration
+    let configuration: CoderConfig
     let arrayCount = 4
     let maxDepth = 7
     var rng: IteratingRandomNumberGenerator
     let depth: Int
 
-    public init(schemaObject: SchemaObject, schemas: [String: SchemaObject], configuration: Configuration = .default, rng: IteratingRandomNumberGenerator = .init(), depth: Int = 0) {
+    public init(schemaObject: SchemaObject, schemas: [String: SchemaObject], configuration: CoderConfig, rng: IteratingRandomNumberGenerator = .init(), depth: Int = 0) {
         self.schemaObject = schemaObject
         self.schemas = schemas
         self.configuration = configuration
@@ -85,11 +85,11 @@ public final class Faker {
             }
             switch schemaObject.format {
             case .int32:
-                return abs(Int32.random(using: &rng))
+                return Int32.random(in: 0...Int32.max, using: &rng)
             case .int64:
-                return abs(Int64.random(using: &rng))
+                return Int64.random(in:  0...Int64.max, using: &rng)
             default:
-                return abs(Int.random(using: &rng))
+                return Int.random(in: 0...Int.max, using: &rng)
             }
         case .number:
             switch schemaObject.format {
@@ -106,7 +106,7 @@ public final class Faker {
                 return "iVBORw0KGgoAAAANSUhEUgAAAOEAAADhCAMAAAAJbSJIAAAASFBMVEX/AAD/fX3/jIz/m5v/q6v/uLj/trb/qan/ior/gYH/2dn/dHT/eHj//Pz/8/P/5OT/z8//yMj/srL/kZH/lZX/oKD/rq7/pKT5lJt8AAABl0lEQVR4nO3dS24CMRAG4TYzw2MgDwiQ+980WWQRZROE1GqVXZ8v8NfSkiXHy+vb+n4+L8tymed5N/342Py2b087bP51nR5wmx9wX/7arnGJvh1jrp6QrA1Q+Fk9IVmLqXpCMgv5LOSzkM9CPgv5Rii8Vk9I1mJTPSGZhXwW8lnIZyGfhXwW8lnIZyGfhXwW8lnIZyGfhXwW8lnIN0LhvnpCsvZ9+mYhn4V8FvJZyGchn4V8FvJZyGchn4V8FvJZyGchn4V8FvJZyGchn4V8FvK1OFRPSDbCi6H+X31ZSGchn4V8FvJZyGchn4V8FvJZyGchn4V8FvJZyGchn4V8FvJZyGchn4V8IxT2/8+MhXQW8lnIZyGfhXwW8lnIZyGfhXwW8lnIZyGfhXwW8lnIZyGfhXwjFN6qJyRrsauekKzFXD0hmYV8FvJZyGchn4V8FvJZyGchn4V8FvJZyGchn4V8FvJZyGchn4V8Le7VE5K12FZPSNZiqZ6QzEI+C/ks5LOQz0I+C/ks5BuhsPcb8CnWY+vZafkCI00HxRaYb6EAAAAASUVORK5CYII="
             case .date, .dateTime:
                 let date = Date(timeIntervalSinceReferenceDate: Double.random(in: 0...1e9, using: &rng))
-                let data = configuration.encode(example: date)!
+                let data = configuration.coder.encodeAsBody(example: date)!
                 return String(data: data, encoding: .utf8)!
                     .trimmingCharacters(in: .init(charactersIn: "\""))
             case .email:
@@ -149,13 +149,13 @@ public final class Faker {
             return String(format: "+49 123 %07d", UInt.random(in: 0...9999999, using: &rng))
         }
         if hints.contains("number") {
-            return String(UInt.random(using: &rng))
+            return String(UInt.random(in: 0...UInt.max, using: &rng))
         }
         if hints.contains("url") {
             if hints.contains("image") || hints.contains("picture") {
                 return "https://picsum.photos/200"
             } else {
-                return "https://google.com?query=\(Int.random(using: &rng))"
+                return "https://google.com?query=\(Int.random(in: 0...10000, using: &rng))"
             }
         }
         if hints.contains("picture") {

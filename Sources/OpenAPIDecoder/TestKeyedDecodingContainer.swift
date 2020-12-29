@@ -9,9 +9,9 @@ import OpenAPI
 
 class TestKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainerProtocol {
 
-    let configuration: Configuration
+    let configuration: CoderConfig
 
-    init(_ configuration: Configuration) {
+    init(_ configuration: CoderConfig) {
         self.configuration = configuration
     }
 

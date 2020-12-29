@@ -9,9 +9,9 @@ import OpenAPI
 
 class TestUnkeyedDecodingContainer: UnkeyedDecodingContainer {
 
-    let configuration: Configuration
+    let configuration: CoderConfig
 
-    init(_ configuration: Configuration) {
+    init(_ configuration: CoderConfig) {
         self.configuration = configuration
     }
 

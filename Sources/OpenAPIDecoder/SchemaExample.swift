@@ -5,7 +5,6 @@
 //
 
 import Foundation
-import Vapor
 import OpenAPI
 
 public struct SchemaExample {
@@ -25,7 +24,7 @@ public struct SchemaExample {
         self.data = { Self.data(example: example, configuration: $0, location: $1) }
     }
 
-    public let data: (Configuration, Location) -> Data?
+    public let data: (CoderConfig, Location) -> Data?
 
     public enum Location {
         case header, body, path
@@ -35,24 +34,19 @@ public struct SchemaExample {
         case couldNotCreateData
     }
 
-    private static func data<T: Codable>(example: T, configuration: Configuration, location: Location) -> Data? {
+    private static func data<T: Codable>(example: T, configuration: CoderConfig, location: Location) -> Data? {
         switch location {
         case .header, .body:
-            return configuration.encode(example: example)
+            return configuration.coder.encodeAsBody(example: example)
         case .path:
-            guard let encoder = try? configuration.contentConfiguration.requireURLEncoder() else {
-                return nil
-            }
-            var uri = URI()
-            try? encoder.encode(example, to: &uri)
-            return uri.query.map { Data($0.utf8) }
+            return configuration.coder.encodeAsURL(example: example)
         }
     }
 
-    func value<T: Decodable>(for type: T.Type, configuration: Configuration, location: Location) throws -> T {
+    func value<T: Decodable>(for type: T.Type, configuration: CoderConfig, location: Location) throws -> T {
         guard let data = self.data(configuration, location)
         else { throw SchemaExampleError.couldNotCreateData }
-        let value = try configuration.bodyDecoder.decode(T.self, from: .init(data: data), headers: .init())
+        let value: T = try configuration.coder.decodeAsBody(data: data)
         if !allowOptional && value is ExpressibleByNilLiteral {
             throw SchemaExampleError.couldNotCreateData
         }

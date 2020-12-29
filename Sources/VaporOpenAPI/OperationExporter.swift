@@ -42,7 +42,7 @@ struct OperationExporter {
             throw ExportError.text("Unexpected Result Type \(route.responseType)")
         }
 
-        let decoder = TestDecoder(configuration, delegate: nil)
+        let decoder = TestDecoder(configuration.coderConfig, delegate: nil)
         do {
             _ = try codable.init(from: decoder)
         } catch TestDecoder.DecoderError.recursion {
@@ -63,7 +63,7 @@ struct OperationExporter {
                 .trimmingCharacters(in: .init(charactersIn: "_"))
             let name = route.method.string.lowercased() + "_" + path
             let url = URL(fileURLWithPath: "open-api-mocks/" + name)
-            try Faker(schemaObject: decoder.schemaObject, schemas: schemas, configuration: configuration, rng: .init())
+            try Faker(schemaObject: decoder.schemaObject, schemas: schemas, configuration: configuration.coderConfig, rng: .init())
                 .generateJSON()
                 .write(to: url)
         }

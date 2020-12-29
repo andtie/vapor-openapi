@@ -22,10 +22,7 @@ let package = Package(
         ),
         .target(
             name: "OpenAPIDecoder",
-            dependencies: [
-                .target(name: "OpenAPI"),
-                .product(name: "Vapor", package: "vapor")
-            ]
+            dependencies: [.target(name: "OpenAPI")]
         ),
         .target(
             name: "OpenAPIFaker",

@@ -24,11 +24,11 @@ public struct ExportCommand: Command {
     }
 
     public mutating func add<T: Codable>(example: T, for schema: SchemaObject) {
-        configuration.schemaExamples.append(SchemaExample(example: example, for: schema))
+        configuration.coderConfig.schemaExamples.append(SchemaExample(example: example, for: schema))
     }
 
     public mutating func add(exampleData: Data, for schema: SchemaObject) {
-        configuration.schemaExamples.append(SchemaExample(data: exampleData, for: schema))
+        configuration.coderConfig.schemaExamples.append(SchemaExample(data: exampleData, for: schema))
     }
 
     public func run(using context: CommandContext, signature: Signature) throws {

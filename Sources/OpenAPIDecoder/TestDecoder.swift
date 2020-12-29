@@ -9,12 +9,12 @@ import OpenAPI
 
 public class TestDecoder: Decoder, SchemaObjectDelegate {
 
-    let configuration: Configuration
+    let configuration: CoderConfig
     public var objectStack: [Any.Type]
     public var schemas: Ref<[String: SchemaObject]>
     public var values: [String: Any]
 
-    public init(_ configuration: Configuration, delegate: SchemaObjectDelegate?) {
+    public init(_ configuration: CoderConfig, delegate: SchemaObjectDelegate?) {
         self.configuration = configuration
         self.objectStack = delegate?.objectStack ?? []
         self.schemas = delegate?.schemas ?? .init([:])
