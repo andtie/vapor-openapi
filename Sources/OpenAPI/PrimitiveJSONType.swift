@@ -25,7 +25,7 @@ extension String: PrimitiveJSONType {}
 
 public struct AnyPrimitiveJSONType: Encodable {
 
-    let value: Any
+    public let value: Any
     let encoder: (Encoder) throws -> Void
 
     public func encode(to encoder: Encoder) throws {

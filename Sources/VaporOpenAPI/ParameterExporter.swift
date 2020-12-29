@@ -5,6 +5,8 @@
 //
 
 import Vapor
+import OpenAPIDecoder
+import OpenAPI
 
 struct ParameterExporter {
 

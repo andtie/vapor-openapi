@@ -4,6 +4,7 @@
 // Created by Andreas in 2020
 //
 
+import OpenAPI
 import Vapor
 
 public struct Configuration {

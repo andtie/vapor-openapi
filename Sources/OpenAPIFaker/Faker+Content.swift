@@ -4,10 +4,10 @@
 // Created by Andreas in 2020
 //
 
-import Vapor
+import OpenAPIDecoder
 
 extension Faker {
-    public static func content<C: Content>(configuration: Configuration = .default) throws -> C {
+    public static func content<C: Codable>(configuration: Configuration = .default) throws -> C {
         let decoder = TestDecoder(configuration, delegate: nil)
         _ = try C.init(from: decoder)
         let faker = Faker(schemaObject: decoder.schemaObject, schemas: decoder.schemas.value, configuration: configuration)

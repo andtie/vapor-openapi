@@ -6,6 +6,7 @@
 
 import Foundation
 import Vapor
+import OpenAPI
 
 public struct SchemaExample {
 
@@ -24,13 +25,13 @@ public struct SchemaExample {
         self.data = { Self.data(example: example, configuration: $0, location: $1) }
     }
 
-    let data: (Configuration, Location) -> Data?
+    public let data: (Configuration, Location) -> Data?
 
-    enum Location {
+    public enum Location {
         case header, body, path
     }
 
-    enum SchemaExampleError: Error {
+    public enum SchemaExampleError: Error {
         case couldNotCreateData
     }
 

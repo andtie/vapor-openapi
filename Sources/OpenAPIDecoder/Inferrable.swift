@@ -5,6 +5,7 @@
 //
 
 import Foundation
+import OpenAPI
 
 protocol Inferrable {
     static func inferSchema(with configuration: Configuration, delegate: SchemaObjectDelegate?) throws -> SchemaObject

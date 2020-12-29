@@ -5,8 +5,9 @@
 //
 
 import Foundation
+import OpenAPI
 
-protocol SchemaObjectDelegate: AnyObject {
+public protocol SchemaObjectDelegate: AnyObject {
     var schemaObject: SchemaObject { get set }
     var isSingleValueOptional: Bool { get set }
     var objectStack: [Any.Type] { get set }
@@ -14,8 +15,8 @@ protocol SchemaObjectDelegate: AnyObject {
     var values: [String: Any] { get set }
 }
 
-class Ref<T> {
-    var value: T
+public class Ref<T> {
+    public var value: T
 
     init(_ value: T) {
         self.value = value

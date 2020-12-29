@@ -5,6 +5,7 @@
 //
 
 import Foundation
+import OpenAPI
 
 class TestKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainerProtocol {
 

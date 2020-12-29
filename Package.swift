@@ -7,6 +7,9 @@ let package = Package(
     name: "vapor-openapi",
     platforms: [.macOS(.v10_15)],
     products: [
+        .library(name: "OpenAPI", targets: ["OpenAPI"]),
+        .library(name: "OpenAPIDecoder", targets: ["OpenAPIDecoder"]),
+        .library(name: "OpenAPIFaker", targets: ["OpenAPIFaker"]),
         .library(name: "VaporOpenAPI", targets: ["VaporOpenAPI"])
     ],
     dependencies: [
@@ -14,8 +17,29 @@ let package = Package(
     ],
     targets: [
         .target(
+            name: "OpenAPI",
+            dependencies: []
+        ),
+        .target(
+            name: "OpenAPIDecoder",
+            dependencies: [
+                .target(name: "OpenAPI"),
+                .product(name: "Vapor", package: "vapor")
+            ]
+        ),
+        .target(
+            name: "OpenAPIFaker",
+            dependencies: [
+                .target(name: "OpenAPI"),
+                .target(name: "OpenAPIDecoder")
+            ]
+        ),
+        .target(
             name: "VaporOpenAPI",
             dependencies: [
+                .target(name: "OpenAPI"),
+                .target(name: "OpenAPIDecoder"),
+                .target(name: "OpenAPIFaker"),
                 .product(name: "Vapor", package: "vapor")
             ]
         ),

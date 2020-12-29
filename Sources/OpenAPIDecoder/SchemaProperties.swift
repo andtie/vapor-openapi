@@ -5,13 +5,14 @@
 //
 
 import Foundation
+import OpenAPI
 
-struct SchemaProperties {
-    let name: String
-    let isOptional: Bool
-    let isArray: Bool
+public struct SchemaProperties {
+    public let name: String
+    public let isOptional: Bool
+    public let isArray: Bool
 
-    init(type: Any.Type) {
+    public init(type: Any.Type) {
         var name = String(reflecting: type)
             .components(separatedBy: ".")
             .dropFirst()
@@ -38,7 +39,7 @@ struct SchemaProperties {
         self.isArray = isArray
     }
 
-    func schemaObject() -> SchemaObject {
+    public func schemaObject() -> SchemaObject {
         if isArray {
             let object = SchemaObject(type: .array)
             object.items = SchemaObject(ref: "#/components/schemas/\(name)")

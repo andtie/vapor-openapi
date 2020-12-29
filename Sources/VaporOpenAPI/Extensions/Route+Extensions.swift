@@ -5,6 +5,7 @@
 //
 
 import Vapor
+import OpenAPI
 
 extension Route {
 

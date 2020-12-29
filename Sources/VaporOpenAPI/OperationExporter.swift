@@ -5,6 +5,9 @@
 //
 
 import Vapor
+import OpenAPIDecoder
+import OpenAPI
+import OpenAPIFaker
 
 struct OperationExporter {
 

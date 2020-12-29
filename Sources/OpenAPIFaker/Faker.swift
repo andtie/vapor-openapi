@@ -5,6 +5,8 @@
 //
 
 import Foundation
+import OpenAPI
+import OpenAPIDecoder
 
 public final class Faker {
     let schemaObject: SchemaObject
@@ -54,7 +56,7 @@ public final class Faker {
                     try (key, Faker(schemaObject: value, schemas: schemas, configuration: configuration, rng: rng, depth: depth + 1)
                             .generateJSON(hint: key))
                 }
-                return Dictionary(mapped, uniquingKeysWith: { x, y in x })
+                return Dictionary(mapped, uniquingKeysWith: { x, _ in x })
             } else if let valueType = schemaObject.additionalProperties {
                 let mapped = try (0..<arrayCount).map { index -> (String, Any) in
                     let key = "\(hint ?? "")-\(index)"
@@ -62,7 +64,7 @@ public final class Faker {
                         .generateJSON(hint: hint)
                     return (key, value)
                 }
-                return Dictionary(mapped, uniquingKeysWith: { x, y in x })
+                return Dictionary(mapped, uniquingKeysWith: { x, _ in x })
             } else {
                 throw FakerError.noProperties
             }
