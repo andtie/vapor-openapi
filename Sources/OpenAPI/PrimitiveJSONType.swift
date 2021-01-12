@@ -23,6 +23,9 @@ extension Float: PrimitiveJSONType {}
 extension Double: PrimitiveJSONType {}
 extension String: PrimitiveJSONType {}
 
+extension Array: PrimitiveJSONType where Element: PrimitiveJSONType {}
+extension Optional: PrimitiveJSONType where Wrapped: PrimitiveJSONType {}
+
 public struct AnyPrimitiveJSONType: Encodable {
 
     public let value: Any
