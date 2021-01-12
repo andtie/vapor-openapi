@@ -10,6 +10,7 @@ let package = Package(
         .library(name: "OpenAPI", targets: ["OpenAPI"]),
         .library(name: "OpenAPIDecoder", targets: ["OpenAPIDecoder"]),
         .library(name: "OpenAPIFaker", targets: ["OpenAPIFaker"]),
+        .library(name: "VaporFaker", targets: ["VaporFaker"]),
         .library(name: "VaporOpenAPI", targets: ["VaporOpenAPI"])
     ],
     dependencies: [
@@ -32,11 +33,17 @@ let package = Package(
             ]
         ),
         .target(
+            name: "VaporFaker",
+            dependencies: [
+                .target(name: "OpenAPIFaker"),
+                .product(name: "Vapor", package: "vapor")
+            ]
+        ),
+        .target(
             name: "VaporOpenAPI",
             dependencies: [
                 .target(name: "OpenAPI"),
                 .target(name: "OpenAPIDecoder"),
-                .target(name: "OpenAPIFaker"),
                 .product(name: "Vapor", package: "vapor")
             ]
         ),

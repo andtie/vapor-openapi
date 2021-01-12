@@ -6,7 +6,6 @@
 
 import OpenAPI
 import OpenAPIDecoder
-import OpenAPIFaker
 import Vapor
 
 struct OperationExporter {
@@ -43,30 +42,7 @@ struct OperationExporter {
         }
 
         let decoder = TestDecoder(configuration.coderConfig, delegate: nil)
-        do {
-            _ = try codable.init(from: decoder)
-        } catch TestDecoder.DecoderError.recursion {
-            // noop
-        } catch {
-            throw error
-        }
-        let properties = SchemaProperties(type: codable)
-        schemas[properties.name] = properties.isArray ? decoder.schemaObject.items : decoder.schemaObject
-        for (key, value) in decoder.schemas.value {
-            schemas[key] = value
-        }
-
-        if !(codable is HTTPResponseStatus.Type) {
-            let path = route.apiPath
-                .replacingOccurrences(of: "/", with: "_")
-                .appending(".json")
-                .trimmingCharacters(in: .init(charactersIn: "_"))
-            let name = route.method.string.lowercased() + "_" + path
-            let url = URL(fileURLWithPath: "open-api-mocks/" + name)
-            try Faker(schemaObject: decoder.schemaObject, schemas: schemas, configuration: configuration.coderConfig, rng: .init())
-                .generateJSON()
-                .write(to: url)
-        }
+        let properties = try decoder.properties(for: codable, schemas: &schemas)
 
         return .init(
             description: properties.name,

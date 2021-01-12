@@ -50,3 +50,21 @@ public class TestDecoder: Decoder, SchemaObjectDelegate {
         return testSingleValueDecodingContainer
     }
 }
+
+extension TestDecoder {
+    public func properties(for codable: Codable.Type, schemas: inout [String: SchemaObject]) throws -> SchemaProperties {
+        do {
+            _ = try codable.init(from: self)
+        } catch TestDecoder.DecoderError.recursion {
+            // noop
+        } catch {
+            throw error
+        }
+        let properties = SchemaProperties(type: codable)
+        schemas[properties.name] = properties.isArray ? schemaObject.items : schemaObject
+        for (key, value) in self.schemas.value {
+            schemas[key] = value
+        }
+        return properties
+    }
+}
