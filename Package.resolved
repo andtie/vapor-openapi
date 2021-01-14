@@ -29,6 +29,15 @@
         }
       },
       {
+        "package": "galactic-api-tools",
+        "repositoryURL": "https://github.com/andtie/galactic-api-tools",
+        "state": {
+          "branch": null,
+          "revision": "dd4cf3f83a65c712fc881a49b67edb813dd78e10",
+          "version": "0.0.1"
+        }
+      },
+      {
         "package": "routing-kit",
         "repositoryURL": "https://github.com/vapor/routing-kit.git",
         "state": {

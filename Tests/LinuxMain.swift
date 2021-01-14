@@ -1,7 +1,7 @@
 import XCTest
 
-import vapor_openapiTests
+import VaporTests
 
 var tests = [XCTestCaseEntry]()
-tests += vapor_openapiTests.allTests()
+tests += VaporTests.allTests()
 XCTMain(tests)

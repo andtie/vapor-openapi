@@ -7,48 +7,31 @@ let package = Package(
     name: "vapor-openapi",
     platforms: [.macOS(.v10_15)],
     products: [
-        .library(name: "OpenAPI", targets: ["OpenAPI"]),
-        .library(name: "OpenAPIDecoder", targets: ["OpenAPIDecoder"]),
-        .library(name: "OpenAPIFaker", targets: ["OpenAPIFaker"]),
         .library(name: "VaporFaker", targets: ["VaporFaker"]),
         .library(name: "VaporOpenAPI", targets: ["VaporOpenAPI"])
     ],
     dependencies: [
-        .package(url: "https://github.com/vapor/vapor.git", from: "4.0.0")
+        .package(url: "https://github.com/vapor/vapor.git", from: "4.0.0"),
+        .package(url: "https://github.com/andtie/galactic-api-tools", from: "0.0.1")
     ],
     targets: [
         .target(
-            name: "OpenAPI",
-            dependencies: []
-        ),
-        .target(
-            name: "OpenAPIDecoder",
-            dependencies: [.target(name: "OpenAPI")]
-        ),
-        .target(
-            name: "OpenAPIFaker",
-            dependencies: [
-                .target(name: "OpenAPI"),
-                .target(name: "OpenAPIDecoder")
-            ]
-        ),
-        .target(
             name: "VaporFaker",
             dependencies: [
-                .target(name: "OpenAPIFaker"),
+                .product(name: "OpenAPIFaker", package: "galactic-api-tools"),
                 .product(name: "Vapor", package: "vapor")
             ]
         ),
         .target(
             name: "VaporOpenAPI",
             dependencies: [
-                .target(name: "OpenAPI"),
-                .target(name: "OpenAPIDecoder"),
+                .product(name: "OpenAPI", package: "galactic-api-tools"),
+                .product(name: "OpenAPIDecoder", package: "galactic-api-tools"),
                 .product(name: "Vapor", package: "vapor")
             ]
         ),
         .testTarget(
-            name: "vapor-openapiTests",
+            name: "VaporTests",
             dependencies: ["VaporOpenAPI"]
         )
     ]
