@@ -5,14 +5,14 @@ import PackageDescription
 
 let package = Package(
     name: "vapor-openapi",
-    platforms: [.macOS(.v10_15)],
+    platforms: [.macOS(.v10_15), .iOS(.v13)],
     products: [
         .library(name: "VaporFaker", targets: ["VaporFaker"]),
         .library(name: "VaporOpenAPI", targets: ["VaporOpenAPI"])
     ],
     dependencies: [
         .package(url: "https://github.com/vapor/vapor.git", from: "4.0.0"),
-        .package(url: "https://github.com/andtie/galactic-api-tools", from: "0.0.1")
+        .package(url: "https://github.com/andtie/galactic-api-tools", from: "0.0.2")
     ],
     targets: [
         .target(
